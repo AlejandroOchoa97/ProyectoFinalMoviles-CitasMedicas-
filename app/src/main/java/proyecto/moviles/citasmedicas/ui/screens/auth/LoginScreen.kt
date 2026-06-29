@@ -53,7 +53,7 @@ import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(onLoginSuccess: () -> Unit = {}) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
@@ -132,7 +132,7 @@ fun LoginScreen() {
             AppButton(
                 text = "Iniciar sesión",
                 icon = Icons.AutoMirrored.Outlined.ArrowForward,
-                onClick = { showMessage("Inicio de sesión simulado") }
+                onClick = onLoginSuccess
             )
             Spacer(Modifier.height(14.dp))
             AppButton(
