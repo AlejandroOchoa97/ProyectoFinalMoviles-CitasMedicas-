@@ -2,6 +2,7 @@ package proyecto.moviles.citasmedicas.data
 
 import proyecto.moviles.citasmedicas.model.Appointment
 import proyecto.moviles.citasmedicas.model.Doctor
+import proyecto.moviles.citasmedicas.model.DoctorAppointment
 
 object SampleData {
     val sampleAppointments = listOf(
@@ -15,5 +16,11 @@ object SampleData {
         Doctor(2, "Dr. Ricardo Salinas", "Pediatría", 4.9, 245, 15, "$950 MXN"),
         Doctor(3, "Dra. Claudia Méndez", "Dermatología", 4.7, 89, 8, "$1,100 MXN"),
         Doctor(4, "Dr. Manuel Torres", "Medicina General", 5.0, 56, 22, "$600 MXN")
+    )
+
+    val sampleDoctorAppointments = listOf(
+        DoctorAppointment(1, "Ricardo Gómez", 45, "09:00", "Chequeo general", "Confirmada"),
+        DoctorAppointment(2, "Elena Ortiz", 72, "10:30", "Control de hipertensión", "Confirmada"),
+        DoctorAppointment(3, "Marco Ruiz", 28, "12:00", "Dolor abdominal agudo", "Urgente", isUrgent = true, hasNotification = true)
     )
 }

@@ -38,6 +38,7 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
 
 private fun statusColors(status: String): Pair<Color, Color> = when (status.lowercase()) {
     "confirmada" -> SuccessBackground to SuccessText
+    "urgente" -> ErrorBackground to ErrorRed
     "pendiente" -> WarningBackground to WarningText
     "cancelada" -> ErrorBackground to ErrorRed
     "completada", "en revisión" -> InfoBackground to InfoText

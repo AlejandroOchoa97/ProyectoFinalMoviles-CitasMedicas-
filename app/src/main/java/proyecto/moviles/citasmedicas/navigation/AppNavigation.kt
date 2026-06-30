@@ -9,6 +9,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import proyecto.moviles.citasmedicas.ui.screens.auth.LoginScreen
 import proyecto.moviles.citasmedicas.ui.screens.patient.PatientHomeScreen
 import proyecto.moviles.citasmedicas.ui.screens.patient.SearchDoctorScreen
+import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorHomeScreen
 import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 
@@ -19,7 +20,10 @@ fun AppNavigation(startDestination: String = Routes.LOGIN) {
 
     when (currentRoute) {
         Routes.LOGIN -> LoginScreen(
-            onLoginSuccess = { currentRoute = Routes.PATIENT_HOME }
+            onLoginSuccess = { 
+                // Simulamos que el primer usuario es un doctor para mostrar la nueva pantalla
+                currentRoute = Routes.DOCTOR_HOME 
+            }
         )
         Routes.PATIENT_HOME -> PatientHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -27,6 +31,9 @@ fun AppNavigation(startDestination: String = Routes.LOGIN) {
         )
         Routes.SEARCH_DOCTOR -> SearchDoctorScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME }
+        )
+        Routes.DOCTOR_HOME -> DoctorHomeScreen(
+            onBack = { currentRoute = Routes.LOGIN }
         )
         else -> LoginScreen(onLoginSuccess = { currentRoute = Routes.PATIENT_HOME })
     }

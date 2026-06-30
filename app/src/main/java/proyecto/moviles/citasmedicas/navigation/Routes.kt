@@ -5,5 +5,6 @@ object Routes {
     const val LOGIN = "login"
     const val PATIENT_HOME = "patient_home"
     const val SEARCH_DOCTOR = "search_doctor"
+    const val DOCTOR_HOME = "doctor_home"
 }
 
