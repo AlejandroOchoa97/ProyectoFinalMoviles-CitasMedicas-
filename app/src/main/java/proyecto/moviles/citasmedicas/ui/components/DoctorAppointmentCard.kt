@@ -27,12 +27,14 @@ import proyecto.moviles.citasmedicas.ui.theme.*
 @Composable
 fun DoctorAppointmentCard(
     appointment: DoctorAppointment,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val borderColor = if (appointment.isUrgent) ErrorRed.copy(alpha = 0.5f) else BorderSoft
     val leftBarColor = if (appointment.isUrgent) ErrorRed else Color.Transparent
 
     Card(
+        onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),

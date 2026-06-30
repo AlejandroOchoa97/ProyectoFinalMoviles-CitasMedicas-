@@ -1,0 +1,285 @@
+package proyecto.moviles.citasmedicas.ui.screens.doctor
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import proyecto.moviles.citasmedicas.data.SampleData
+import proyecto.moviles.citasmedicas.model.DoctorAppointment
+import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
+import proyecto.moviles.citasmedicas.ui.theme.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DoctorAppointmentDetailScreen(
+    appointmentId: Int,
+    onBack: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
+) {
+    val appointment = SampleData.sampleDoctorAppointments.find { it.id == appointmentId } 
+        ?: SampleData.sampleDoctorAppointments.last()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "MediCitas",
+                        color = PrimaryBlue,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = PrimaryBlue)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onProfileClick) {
+                        Icon(Icons.Default.Person, contentDescription = "Perfil", tint = PrimaryBlue)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppWhite)
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(selectedIndex = 1) // Historial
+        },
+        containerColor = AppBackground
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Patient Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = AppWhite),
+                border = BorderStroke(1.dp, BorderSoft)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .size(70.dp)
+                                .background(SecondaryBlue, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp), tint = PrimaryBlue)
+                        }
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            null,
+                            tint = PrimaryBlue,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(24.dp)
+                                .background(AppWhite, CircleShape)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    Column {
+                        Text(
+                            text = appointment.patientName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "${appointment.patientAge} años • ${appointment.patientGender}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Phone, null, modifier = Modifier.size(16.dp), tint = PrimaryBlue)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = appointment.patientPhone,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = PrimaryBlue,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Appointment Details Section
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = SecondaryBlue.copy(alpha = 0.2f)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.DateRange, null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Detalles de la Cita",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        InfoBox(label = "Fecha", value = appointment.date, modifier = Modifier.weight(1f))
+                        InfoBox(label = "Hora", value = appointment.time, modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = AppWhite),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Motivo de la visita",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = appointment.detailedReason.ifEmpty { appointment.reason },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = SecondaryBlue.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Info, null, modifier = Modifier.size(16.dp), tint = TextSecondary)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = appointment.specialty.uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Action Buttons
+            Button(
+                onClick = { },
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                shape = RoundedCornerShape(27.dp)
+            ) {
+                Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Finalizar cita", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(25.dp),
+                    border = BorderStroke(1.dp, PrimaryBlue)
+                ) {
+                    Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp), tint = PrimaryBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Subir receta", color = PrimaryBlue, fontSize = 13.sp)
+                }
+                OutlinedButton(
+                    onClick = { },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(25.dp),
+                    border = BorderStroke(1.dp, PrimaryBlue)
+                ) {
+                    Icon(Icons.Default.DateRange, null, modifier = Modifier.size(18.dp), tint = PrimaryBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Reprogramar", color = PrimaryBlue, fontSize = 13.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            TextButton(
+                onClick = { },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Icon(Icons.Default.Delete, null, tint = ErrorRed, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cancelar consulta", color = ErrorRed, fontWeight = FontWeight.Medium)
+            }
+            
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+private fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = AppWhite),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = value, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = AppBackgroundPreview)
+@Composable
+fun DoctorAppointmentDetailScreenPreview() {
+    MediCitasTheme {
+        DoctorAppointmentDetailScreen(appointmentId = 4)
+    }
+}

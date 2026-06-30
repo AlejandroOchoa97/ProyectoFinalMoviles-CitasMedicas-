@@ -19,8 +19,21 @@ object SampleData {
     )
 
     val sampleDoctorAppointments = listOf(
-        DoctorAppointment(1, "Ricardo Gómez", 45, "09:00", "Chequeo general", "Confirmada"),
-        DoctorAppointment(2, "Elena Ortiz", 72, "10:30", "Control de hipertensión", "Confirmada"),
-        DoctorAppointment(3, "Marco Ruiz", 28, "12:00", "Dolor abdominal agudo", "Urgente", isUrgent = true, hasNotification = true)
+        DoctorAppointment(1, "Ricardo Gómez", 45, "Masculino", "+52 55 1111 2222", "15 Oct, 2024", "09:00", "Chequeo general", specialty = "Medicina General", status = "Confirmada"),
+        DoctorAppointment(2, "Elena Ortiz", 72, "Femenino", "+52 55 3333 4444", "15 Oct, 2024", "10:30", "Control de hipertensión", specialty = "Cardiología", status = "Confirmada"),
+        DoctorAppointment(3, "Marco Ruiz", 28, "Masculino", "+52 55 5555 6666", "15 Oct, 2024", "12:00", "Dolor abdominal agudo", specialty = "Urgencias", status = "Urgente", isUrgent = true, hasNotification = true),
+        DoctorAppointment(
+            id = 4,
+            patientName = "Ricardo Mendoza",
+            patientAge = 68,
+            patientGender = "Masculino",
+            patientPhone = "+52 55 1234 5678",
+            date = "24 Oct, 2023",
+            time = "14:30 h",
+            reason = "Seguimiento de hipertensión arterial.",
+            detailedReason = "Seguimiento de hipertensión arterial. El paciente reporta mareos ligeros por las mañanas durante la última semana. Requiere revisión de dosis de Enalapril.",
+            specialty = "CARDIOLOGÍA",
+            status = "Confirmada"
+        )
     )
 }

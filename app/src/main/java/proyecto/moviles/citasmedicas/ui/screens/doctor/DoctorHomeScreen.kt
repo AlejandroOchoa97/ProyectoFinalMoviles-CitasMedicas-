@@ -29,7 +29,9 @@ import proyecto.moviles.citasmedicas.ui.theme.*
 fun DoctorHomeScreen(
     onBack: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onAddAppointment: () -> Unit = {}
+    onAddAppointment: () -> Unit = {},
+    onAppointmentClick: (Int) -> Unit = {},
+    onNavigateToAvailability: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -66,7 +68,12 @@ fun DoctorHomeScreen(
             }
         },
         bottomBar = {
-            BottomNavigationBar(selectedIndex = 0)
+            BottomNavigationBar(
+                selectedIndex = 0,
+                onItemSelected = { index ->
+                    if (index == 1) onNavigateToAvailability()
+                }
+            )
         },
         containerColor = AppBackground
     ) { paddingValues ->
@@ -113,7 +120,10 @@ fun DoctorHomeScreen(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(SampleData.sampleDoctorAppointments) { appointment ->
-                    DoctorAppointmentCard(appointment = appointment)
+                    DoctorAppointmentCard(
+                        appointment = appointment,
+                        onClick = { onAppointmentClick(appointment.id) }
+                    )
                 }
             }
         }
