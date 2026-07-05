@@ -53,7 +53,11 @@ import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit = {}) {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit = {},
+    onRegisterClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {}
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
@@ -123,7 +127,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}) {
                     )
                     Text("Recordarme", style = MaterialTheme.typography.bodyMedium)
                 }
-                TextButton(onClick = { showMessage("Recuperación pendiente") }) {
+                TextButton(onClick = onForgotPasswordClick) {
                     Text("¿Olvidé mi contraseña?", color = PrimaryBlue, fontSize = 13.sp)
                 }
             }
@@ -138,7 +142,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit = {}) {
             AppButton(
                 text = "Registrarse",
                 style = AppButtonStyle.Outline,
-                onClick = { showMessage("Registro pendiente") }
+                onClick = onRegisterClick
             )
 
             Spacer(Modifier.height(28.dp))

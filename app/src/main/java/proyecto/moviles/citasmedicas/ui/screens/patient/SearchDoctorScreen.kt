@@ -54,7 +54,14 @@ import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 
 @Composable
-fun SearchDoctorScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SearchDoctorScreen(
+    onBack: () -> Unit,
+    onDoctorSelected: (Int) -> Unit = {},
+    onNavigateHome: () -> Unit = {},
+    onNavigateHistory: () -> Unit = {},
+    onNavigateProfile: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     var query by remember { mutableStateOf("") }
     var selectedSpecialty by remember { mutableStateOf("Todos") }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -70,7 +77,15 @@ fun SearchDoctorScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         containerColor = AppBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { SearchDoctorTopBar(onBack) },
-        bottomBar = { BottomNavigationBar(selectedIndex = 0) }
+        bottomBar = {
+            BottomNavigationBar(selectedIndex = 0) { index ->
+                when (index) {
+                    0 -> onNavigateHome()
+                    1 -> onNavigateHistory()
+                    2 -> onNavigateProfile()
+                }
+            }
+        }
     ) { innerPadding ->
         Column(Modifier.fillMaxSize().padding(innerPadding)) {
             OutlinedTextField(
@@ -117,9 +132,7 @@ fun SearchDoctorScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 items(doctors, key = { it.id }) { doctor ->
                     DoctorCard(
                         doctor = doctor,
-                        onProfileClick = {
-                            scope.launch { snackbarHostState.showSnackbar("Perfil del médico pendiente") }
-                        }
+                        onProfileClick = { onDoctorSelected(doctor.id) }
                     )
                 }
             }

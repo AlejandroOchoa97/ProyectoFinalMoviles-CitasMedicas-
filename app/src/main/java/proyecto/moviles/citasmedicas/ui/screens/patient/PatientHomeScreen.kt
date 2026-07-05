@@ -55,6 +55,9 @@ import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 fun PatientHomeScreen(
     onBack: () -> Unit,
     onScheduleAppointment: () -> Unit,
+    onAppointmentDetails: (Int) -> Unit = {},
+    onNavigateHistory: () -> Unit = {},
+    onNavigateProfile: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableStateOf("Próximas") }
@@ -67,7 +70,14 @@ fun PatientHomeScreen(
         containerColor = AppBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { PatientTopBar(onBack) },
-        bottomBar = { BottomNavigationBar(selectedIndex = 0) },
+        bottomBar = {
+            BottomNavigationBar(selectedIndex = 0) { index ->
+                when (index) {
+                    1 -> onNavigateHistory()
+                    2 -> onNavigateProfile()
+                }
+            }
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onScheduleAppointment,
@@ -110,9 +120,7 @@ fun PatientHomeScreen(
             items(SampleData.sampleAppointments, key = { it.id }) { appointment ->
                 AppointmentCard(
                     appointment = appointment,
-                    onDetailsClick = {
-                        scope.launch { snackbarHostState.showSnackbar("Detalle de cita pendiente") }
-                    }
+                    onDetailsClick = { onAppointmentDetails(appointment.id) }
                 )
             }
         }

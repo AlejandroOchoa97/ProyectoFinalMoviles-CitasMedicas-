@@ -7,5 +7,10 @@ data class Appointment(
     val date: String,
     val time: String,
     val price: String,
-    val status: String
+    val status: String,
+    val clinicName: String = "",
+    val clinicAddress: String = "",
+    // Agrega coordenadas reales en SampleData cuando estén confirmadas.
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
