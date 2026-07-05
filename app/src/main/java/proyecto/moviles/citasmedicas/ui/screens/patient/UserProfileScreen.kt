@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
+/* Perfil: agrupa cuenta, preferencias e información; sus acciones todavía son visuales. */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

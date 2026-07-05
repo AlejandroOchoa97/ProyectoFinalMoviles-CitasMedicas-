@@ -1,4 +1,6 @@
-﻿package proyecto.moviles.citasmedicas.ui.screens.auth
+package proyecto.moviles.citasmedicas.ui.screens.auth
+
+/* Login visual: mantiene campos en memoria y delega navegación mediante callbacks. */
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

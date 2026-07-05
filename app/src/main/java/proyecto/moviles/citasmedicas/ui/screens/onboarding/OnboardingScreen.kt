@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.onboarding
 
+/* Plantilla de onboarding: cambia contenido por página y expone acciones para avanzar u omitir. */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

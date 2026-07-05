@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
+/* Agendamiento: permite elegir fecha, horario y motivo antes de confirmar la cita simulada. */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,14 +20,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,7 +49,6 @@ import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleDetailsScreen(
     onBack: () -> Unit,
@@ -189,7 +188,7 @@ fun ScheduleDetailsScreen(
                                     selectedTime = time
                                 },
 
-                                // Have que los botones tengan el mismo ancho
+                                // Hace que los botones tengan el mismo ancho.
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -199,7 +198,7 @@ fun ScheduleDetailsScreen(
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Cmapo de texto para escribir el motivo de la consulta
+            // Campo de texto para escribir el motivo de la consulta.
             OutlinedTextField(
                 value = reason,
                 onValueChange = {
@@ -230,7 +229,7 @@ fun ScheduleDetailsScreen(
 /**
  * Barra superior de la pantalla.
  *
- * Esata contiene el botón para regresar, el nombre de la app y el ícono de perfil.
+ * Contiene el botón para regresar, el nombre de la app y el ícono de perfil.
  */
 @Composable
 private fun ScheduleDetailsTopBar(
@@ -262,7 +261,7 @@ private fun ScheduleDetailsTopBar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // No funciona la navegación todavía
+        // Acción visual reservada para conectar el perfil posteriormente.
         IconButton(
             onClick = {}
         ) {
@@ -281,12 +280,13 @@ private fun ScheduleDetailsTopBar(
 @Preview(
     name = "Schedule Details Screen",
     showBackground = true,
+    showSystemUi = true,
     backgroundColor = AppBackgroundPreview,
     widthDp = 390,
     heightDp = 844
 )
 @Composable
-private fun ScheduleDetailsScreenPreview() {
+fun ScheduleDetailsScreenPreview() {
     MediCitasTheme {
         ScheduleDetailsScreen(
             onBack = {},

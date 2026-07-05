@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.auth
 
+/* Registro simulado: captura rol y datos localmente; aún no envía información a un backend. */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.doctor
 
+/* Disponibilidad: configura bloques horarios y tarifa temporalmente, sin persistencia. */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

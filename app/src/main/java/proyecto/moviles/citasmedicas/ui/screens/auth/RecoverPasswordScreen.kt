@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.auth
 
+/* Recuperación simulada: recibe el correo, muestra confirmación y permite volver al login. */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column

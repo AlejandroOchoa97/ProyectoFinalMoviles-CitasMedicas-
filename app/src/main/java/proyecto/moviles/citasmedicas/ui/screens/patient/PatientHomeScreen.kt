@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
+/* Inicio del paciente: lista citas simuladas y conecta búsqueda, detalle, historial y perfil. */
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues

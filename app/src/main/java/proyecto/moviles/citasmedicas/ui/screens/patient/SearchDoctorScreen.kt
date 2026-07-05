@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
+/* Búsqueda de médicos: filtra SampleData por texto/especialidad y abre el agendamiento. */
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues

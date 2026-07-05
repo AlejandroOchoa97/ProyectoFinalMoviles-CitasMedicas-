@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
+/* Historial: filtra consultas simuladas y conecta las secciones de la navegación inferior. */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

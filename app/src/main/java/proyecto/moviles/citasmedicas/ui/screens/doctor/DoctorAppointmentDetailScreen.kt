@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.doctor
 
+/* Detalle médico: presenta datos clínicos y acciones simuladas sobre una cita seleccionada. */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

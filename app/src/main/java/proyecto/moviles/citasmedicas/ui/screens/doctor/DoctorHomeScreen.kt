@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.doctor
 
+/* Inicio médico: filtra citas del día y abre detalle o configuración de disponibilidad. */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

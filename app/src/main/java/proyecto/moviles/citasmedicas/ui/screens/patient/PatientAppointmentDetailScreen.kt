@@ -1,5 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
+/* Detalle del paciente: muestra la cita y carga Maps solo si existen coordenadas reales. */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -240,7 +242,7 @@ private fun LocationSection(appointment: Appointment, showInteractiveMap: Boolea
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.LocationOn, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(38.dp))
                         Text(
-                            if (hasCoordinates) "Mapa disponible al ejecutar la app" else "Mapa pendiente de coordenadas reales",
+                            if (hasCoordinates) "Mapa disponible al ejecutar la app" else "Mapa pendiente",
                             color = PrimaryBlue,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
