@@ -1,5 +1,6 @@
 package proyecto.moviles.citasmedicas.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -17,13 +18,13 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(
             entity = PatientEntity::class,
-            parentColumns = ["id"],
+            parentColumns = ["idPatient"],
             childColumns = ["patientId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = DoctorEntity::class,
-            parentColumns = ["id"],
+            parentColumns = ["idDoctor"],
             childColumns = ["doctorId"],
             onDelete = ForeignKey.CASCADE
         )
@@ -41,16 +42,19 @@ data class AppointmentEntity(
      * Room lo genera automáticamente cuando se registra una nueva cita.
      */
     @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "idAppointment")
     val id: Int = 0,
 
     /**
      * ID del paciente que agenda la cita.
      */
+    @ColumnInfo(name = "patientId")
     val patientId: Int,
 
     /**
      * ID del médico con quien se agenda la cita.
      */
+    @ColumnInfo(name = "doctorId")
     val doctorId: Int,
 
     /**
@@ -59,6 +63,7 @@ data class AppointmentEntity(
      * De momento es con String para el entregable, debemos manejarlo con
      * la clase que se maneja el calendario creado en los componentes.
      */
+    @ColumnInfo(name = "dateAppointment")
     val date: String,
 
     /**
@@ -67,11 +72,13 @@ data class AppointmentEntity(
      * De momento es con String para el entregable, debemos manejarlo con
      * la clase que se maneja el horario creado en los componentes.
      */
+    @ColumnInfo(name = "timeAppointment")
     val time: String,
 
     /**
-     * Motivo de la consulta escrito por el paciente.
+     * Motivo de la consulta.
      */
+    @ColumnInfo(name = "reason")
     val reason: String,
 
     /**
@@ -83,13 +90,14 @@ data class AppointmentEntity(
      * - "COMPLETED"
      * - "CANCELLED"
      */
+    @ColumnInfo(name = "status")
     val status: String = "PENDING",
 
     /**
      * Fecha en la que se creó la cita.
      *
      * Por ahora también se guarda como String.
-     * Ejemplo: "2026-07-06"
      */
+    @ColumnInfo(name = "createdAt")
     val createdAt: String = ""
 )
