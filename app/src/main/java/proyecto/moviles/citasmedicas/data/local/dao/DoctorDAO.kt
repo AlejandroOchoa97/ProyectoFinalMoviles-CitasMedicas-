@@ -35,6 +35,12 @@ interface DoctorDAO {
     suspend fun getAllDoctors(): List<DoctorEntity>
 
     /**
+     * Busca un médico por su nombre.
+     */
+    @Query("SELECT * FROM doctors WHERE nameDoctor = :doctorName")
+    suspend fun getDoctorByName(doctorName: String): DoctorEntity?
+
+    /**
      * Busca un médico por su ID.
      */
     @Query("SELECT * FROM doctors WHERE idDoctor = :doctorId LIMIT 1")
@@ -60,4 +66,5 @@ interface DoctorDAO {
      */
     @Query("""SELECT * FROM doctors WHERE nameDoctor LIKE '%' || :query || '%' OR specialty LIKE '%' || :query || '%'""")
     suspend fun searchDoctors(query: String): List<DoctorEntity>
+
 }
