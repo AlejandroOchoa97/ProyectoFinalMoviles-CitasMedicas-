@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.format.DateTimeFormatter
 import proyecto.moviles.citasmedicas.data.SampleData
 import proyecto.moviles.citasmedicas.model.DoctorAppointment
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
@@ -158,8 +159,10 @@ fun DoctorAppointmentDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        InfoBox(label = "Fecha", value = appointment.date, modifier = Modifier.weight(1f))
-                        InfoBox(label = "Hora", value = appointment.time, modifier = Modifier.weight(1f))
+                        val dateFormatter = DateTimeFormatter.ofPattern("dd MMM, yyyy")
+                        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+                        InfoBox(label = "Fecha", value = appointment.date.format(dateFormatter), modifier = Modifier.weight(1f))
+                        InfoBox(label = "Hora", value = "${appointment.time.format(timeFormatter)} h", modifier = Modifier.weight(1f))
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

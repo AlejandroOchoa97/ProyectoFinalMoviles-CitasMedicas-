@@ -43,6 +43,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.components.StatusBadge
@@ -61,17 +64,17 @@ private data class HistoryAppointment(
     val id: Int,
     val doctor: String,
     val specialty: String,
-    val date: String,
-    val time: String,
+    val date: LocalDate,
+    val time: LocalTime,
     val status: String,
     val hasPrescription: Boolean
 )
 
 private val historyAppointments = listOf(
-    HistoryAppointment(1, "Dra. Elena Ramírez", "Cardiología", "15 May, 2024", "09:30 AM", "Completada", true),
-    HistoryAppointment(2, "Dr. Ricardo Silva", "Pediatría", "02 May, 2024", "14:00 PM", "Cancelada", false),
-    HistoryAppointment(3, "Dra. Sofía Martínez", "Dermatología", "20 Abr, 2024", "11:15 AM", "Completada", true),
-    HistoryAppointment(4, "Dr. Manuel Torres", "Medicina General", "10 Abr, 2024", "16:45 PM", "Completada", false)
+    HistoryAppointment(1, "Dra. Elena Ramírez", "Cardiología", LocalDate.of(2024, 5, 15), LocalTime.of(9, 30), "Completada", true),
+    HistoryAppointment(2, "Dr. Ricardo Silva", "Pediatría", LocalDate.of(2024, 5, 2), LocalTime.of(14, 0), "Cancelada", false),
+    HistoryAppointment(3, "Dra. Sofía Martínez", "Dermatología", LocalDate.of(2024, 4, 20), LocalTime.of(11, 15), "Completada", true),
+    HistoryAppointment(4, "Dr. Manuel Torres", "Medicina General", LocalDate.of(2024, 4, 10), LocalTime.of(16, 45), "Completada", false)
 )
 
 @Composable
@@ -140,6 +143,8 @@ fun AppointmentHistoryScreen(
 
 @Composable
 private fun HistoryAppointmentCard(appointment: HistoryAppointment, onDetails: () -> Unit) {
+    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM, yyyy")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     Card(
         colors = CardDefaults.cardColors(containerColor = AppWhite),
         border = BorderStroke(1.dp, BorderSoft),
@@ -158,7 +163,7 @@ private fun HistoryAppointmentCard(appointment: HistoryAppointment, onDetails: (
                 }
                 StatusBadge(appointment.status)
             }
-            Text("▣  ${appointment.date}        ◷  ${appointment.time}", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+            Text("▣  ${appointment.date.format(dateFormatter)}        ◷  ${appointment.time.format(timeFormatter)}", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (appointment.hasPrescription) {
                     Icon(Icons.Filled.Description, null, tint = SuccessText, modifier = Modifier.size(17.dp))

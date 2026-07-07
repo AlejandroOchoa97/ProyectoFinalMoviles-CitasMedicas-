@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.time.format.DateTimeFormatter
 import proyecto.moviles.citasmedicas.data.SampleData
 import proyecto.moviles.citasmedicas.model.Appointment
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
@@ -42,6 +43,9 @@ import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 
 @Composable
 fun AppointmentCard(appointment: Appointment, onDetailsClick: () -> Unit, modifier: Modifier = Modifier) {
+    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -72,9 +76,9 @@ fun AppointmentCard(appointment: Appointment, onDetailsClick: () -> Unit, modifi
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.DateRange, null, tint = TextSecondary, modifier = Modifier.size(17.dp))
                     Spacer(Modifier.width(5.dp))
-                    Text(appointment.date, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    Text(appointment.date.format(dateFormatter), style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
-                Text("◷  ${appointment.time}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Text("◷  ${appointment.time.format(timeFormatter)}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             }
 
             HorizontalDivider(color = BorderSoft)

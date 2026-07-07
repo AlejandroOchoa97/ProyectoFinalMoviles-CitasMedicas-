@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.format.DateTimeFormatter
 import proyecto.moviles.citasmedicas.data.SampleData
 import proyecto.moviles.citasmedicas.model.DoctorAppointment
 import proyecto.moviles.citasmedicas.ui.theme.*
@@ -104,6 +105,7 @@ fun DoctorAppointmentCard(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Column {
+                            val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
                             Text(
                                 text = appointment.patientName,
                                 style = MaterialTheme.typography.bodyLarge,
@@ -111,7 +113,7 @@ fun DoctorAppointmentCard(
                                 color = TextPrimary
                             )
                             Text(
-                                text = "${appointment.patientAge} años • ${appointment.time}",
+                                text = "${appointment.patientAge} años • ${appointment.time.format(timeFormatter)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary
                             )

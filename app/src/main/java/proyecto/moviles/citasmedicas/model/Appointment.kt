@@ -1,11 +1,14 @@
 package proyecto.moviles.citasmedicas.model
 
+import java.time.LocalDate
+import java.time.LocalTime
+
 data class Appointment(
     val id: Int,
     val doctorName: String,
     val specialty: String,
-    val date: String,
-    val time: String,
+    val date: LocalDate,
+    val time: LocalTime,
     val price: String,
     val status: String,
     val clinicName: String = "",

@@ -50,6 +50,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.SampleData
 import proyecto.moviles.citasmedicas.model.Appointment
@@ -165,6 +166,8 @@ private fun DoctorHeader(appointment: Appointment) {
 
 @Composable
 private fun AppointmentSummary(appointment: Appointment) {
+    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         DetailCard("Especialidad", appointment.specialty, Modifier.weight(1f))
         DetailCard("Costo", appointment.price, Modifier.weight(1f))
@@ -180,7 +183,7 @@ private fun AppointmentSummary(appointment: Appointment) {
             Spacer(Modifier.size(10.dp))
             Column {
                 Text("Fecha y hora", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                Text("${appointment.date}, ${appointment.time}", color = TextPrimary, fontWeight = FontWeight.Medium)
+                Text("${appointment.date.format(dateFormatter)}, ${appointment.time.format(timeFormatter)}", color = TextPrimary, fontWeight = FontWeight.Medium)
             }
         }
     }
