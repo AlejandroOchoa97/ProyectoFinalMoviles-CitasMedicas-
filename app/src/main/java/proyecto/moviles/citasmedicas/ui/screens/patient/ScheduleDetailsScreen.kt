@@ -48,6 +48,7 @@ import proyecto.moviles.citasmedicas.ui.theme.OutlineGray
 import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import java.time.LocalTime
 
 @Composable
 fun ScheduleDetailsScreen(
@@ -56,19 +57,19 @@ fun ScheduleDetailsScreen(
     modifier: Modifier = Modifier
 ) {
     // Guarda el horario seleccionado
-    var selectedTime by remember { mutableStateOf("11:30") }
+    var selectedTime by remember { mutableStateOf(LocalTime.of(11, 30)) }
 
     // Guarda el motivo de la consulta
     var reason by remember { mutableStateOf("") }
 
     // Lista de horarios disponibles
     val availableTimes = listOf(
-        "9:00",
-        "10:00",
-        "11:30",
-        "14:00",
-        "15:30",
-        "17:00",
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 0),
+        LocalTime.of(11, 30),
+        LocalTime.of(14, 0),
+        LocalTime.of(15, 30),
+        LocalTime.of(17, 0),
     )
 
     /**
