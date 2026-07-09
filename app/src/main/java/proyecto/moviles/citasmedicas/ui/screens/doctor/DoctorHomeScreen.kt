@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -36,7 +35,6 @@ import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorHomeViewModel
 fun DoctorHomeScreen(
     onBack: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onAddAppointment: () -> Unit = {},
     onAppointmentClick: (Int) -> Unit = {},
     onNavigateToAvailability: () -> Unit = {},
     appointmentRepository: AppointmentRepository? = null,
@@ -81,21 +79,13 @@ fun DoctorHomeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppWhite)
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddAppointment,
-                containerColor = PrimaryBlue,
-                contentColor = AppWhite,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Nueva cita")
-            }
-        },
         bottomBar = {
             BottomNavigationBar(
                 selectedIndex = 0,
+                middleLabel = "Disponibilidad",
                 onItemSelected = { index ->
                     if (index == 1) onNavigateToAvailability()
+                    if (index == 2) onProfileClick()
                 }
             )
         },

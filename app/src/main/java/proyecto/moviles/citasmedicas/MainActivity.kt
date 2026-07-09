@@ -22,7 +22,8 @@ class MainActivity : ComponentActivity() {
             LocalDataSeeder(
                 patientRepository = appContainer.patientRepository,
                 doctorRepository = appContainer.doctorRepository,
-                appointmentRepository = appContainer.appointmentRepository
+                appointmentRepository = appContainer.appointmentRepository,
+                doctorAvailabilityRepository = appContainer.doctorAvailabilityRepository
             ).seedIfNeeded()
         }
 
@@ -31,7 +32,8 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     appointmentRepository = appContainer.appointmentRepository,
                     patientRepository = appContainer.patientRepository,
-                    doctorRepository = appContainer.doctorRepository
+                    doctorRepository = appContainer.doctorRepository,
+                    doctorAvailabilityRepository = appContainer.doctorAvailabilityRepository
                 )
             }
         }

@@ -3,9 +3,11 @@ package proyecto.moviles.citasmedicas.data.local.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import proyecto.moviles.citasmedicas.data.local.dao.AppointmentDAO
+import proyecto.moviles.citasmedicas.data.local.dao.DoctorAvailabilityDAO
 import proyecto.moviles.citasmedicas.data.local.dao.DoctorDAO
 import proyecto.moviles.citasmedicas.data.local.dao.PatientDAO
 import proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity
+import proyecto.moviles.citasmedicas.data.local.entity.DoctorAvailabilityEntity
 import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
 import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 
@@ -14,9 +16,10 @@ import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
     entities = [
         PatientEntity::class,
         DoctorEntity::class,
-        AppointmentEntity::class
+        AppointmentEntity::class,
+        DoctorAvailabilityEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class MediCitasDatabase : RoomDatabase() {
@@ -35,4 +38,6 @@ abstract class MediCitasDatabase : RoomDatabase() {
      * DAO para acceder a la tabla de citas médicas.
      */
     abstract fun appointmentDAO(): AppointmentDAO
+
+    abstract fun doctorAvailabilityDAO(): DoctorAvailabilityDAO
 }

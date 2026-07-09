@@ -23,10 +23,14 @@ import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 private data class BottomItem(val label: String, val icon: ImageVector)
 
 @Composable
-fun BottomNavigationBar(selectedIndex: Int = 0, onItemSelected: (Int) -> Unit = {}) {
+fun BottomNavigationBar(
+    selectedIndex: Int = 0,
+    middleLabel: String = "Historial",
+    onItemSelected: (Int) -> Unit = {}
+) {
     val items = listOf(
         BottomItem("Inicio", Icons.Filled.Home),
-        BottomItem("Historial", Icons.Filled.DateRange),
+        BottomItem(middleLabel, Icons.Filled.DateRange),
         BottomItem("Perfil", Icons.Filled.Person)
     )
 

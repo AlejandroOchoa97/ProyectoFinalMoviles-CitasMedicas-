@@ -3,6 +3,7 @@ package proyecto.moviles.citasmedicas.data
 import android.content.Context
 import proyecto.moviles.citasmedicas.data.local.database.DatabaseProvider
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 
@@ -60,6 +61,17 @@ class AppContainer(
     val appointmentRepository: AppointmentRepository by lazy {
         AppointmentRepository(
             appointmentDAO = database.appointmentDAO()
+        )
+    }
+
+    /**
+     * Repositorio de disponibilidad médica.
+     *
+     * Guarda y consulta los bloques de horario configurados por el médico.
+     */
+    val doctorAvailabilityRepository: DoctorAvailabilityRepository by lazy {
+        DoctorAvailabilityRepository(
+            doctorAvailabilityDAO = database.doctorAvailabilityDAO()
         )
     }
 }

@@ -1,22 +1,57 @@
 package proyecto.moviles.citasmedicas.ui.screens.doctor
 
-/* Disponibilidad: configura bloques horarios y tarifa temporalmente, sin persistencia. */
+/* Disponibilidad médica: permite configurar horarios y guardarlos en Room. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,19 +63,55 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
-import proyecto.moviles.citasmedicas.ui.theme.*
+import proyecto.moviles.citasmedicas.ui.theme.AppBackground
+import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
+import proyecto.moviles.citasmedicas.ui.theme.AppWhite
+import proyecto.moviles.citasmedicas.ui.theme.BorderSoft
+import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
+import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
+import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
+import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
+import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAvailabilityBlockUi
+import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAvailabilityViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorAvailabilityScreen(
     onBack: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {}
+    onNavigateToHome: () -> Unit = {},
+    availabilityRepository: DoctorAvailabilityRepository? = null,
+    doctorId: Int = 1
 ) {
-    var fee by remember { mutableStateOf("850") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // ViewModel que carga y guarda la disponibilidad médica en Room.
+    val viewModel = remember(availabilityRepository) {
+        DoctorAvailabilityViewModel(availabilityRepository)
+    }
+    val uiState = viewModel.uiState
+
+    // Al abrir la pantalla se cargan los bloques guardados del médico activo.
+    LaunchedEffect(doctorId) {
+        viewModel.loadAvailability(doctorId)
+    }
+
+    // Muestra mensajes de éxito o error producidos por el ViewModel.
+    LaunchedEffect(uiState.message, uiState.errorMessage) {
+        val message = uiState.message ?: uiState.errorMessage
+        if (message != null) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessages()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -53,12 +124,20 @@ fun DoctorAvailabilityScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = TextPrimary)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar",
+                            tint = TextPrimary
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = onProfileClick) {
-                        Icon(Icons.Default.Person, contentDescription = "Perfil", tint = PrimaryBlue)
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = PrimaryBlue
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppWhite)
@@ -67,8 +146,10 @@ fun DoctorAvailabilityScreen(
         bottomBar = {
             BottomNavigationBar(
                 selectedIndex = 1,
+                middleLabel = "Disponibilidad",
                 onItemSelected = { index ->
                     if (index == 0) onNavigateToHome()
+                    if (index == 2) onProfileClick()
                 }
             )
         },
@@ -83,63 +164,17 @@ fun DoctorAvailabilityScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Month Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Octubre 2023",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Row {
-                    Icon(Icons.Default.KeyboardArrowLeft, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.KeyboardArrowRight, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
-                }
-            }
+            MonthHeader()
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Calendar Strip
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = AppWhite,
-                border = BorderStroke(1.dp, BorderSoft.copy(alpha = 0.5f))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        val days = listOf("D", "L", "M", "M", "J", "V", "S")
-                        days.forEach { day ->
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
-                                modifier = Modifier.width(36.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        CalendarDay("29", isSelected = false, isPrevMonth = true)
-                        CalendarDay("30", isSelected = false, isPrevMonth = true)
-                        CalendarDay("1", isSelected = false, isHighlighted = true)
-                        CalendarDay("2", isSelected = false)
-                        CalendarDay("3", isSelected = false)
-                        CalendarDay("4", isSelected = true)
-                        CalendarDay("5", isSelected = false)
-                    }
-                }
-            }
+            CalendarStrip(
+                selectedDay = uiState.selectedDay,
+                onDaySelected = viewModel::selectDay
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Schedules Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -151,7 +186,7 @@ fun DoctorAvailabilityScreen(
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
-                TextButton(onClick = { }) {
+                TextButton(onClick = viewModel::addBlock) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Añadir bloque", fontWeight = FontWeight.SemiBold)
@@ -160,40 +195,32 @@ fun DoctorAvailabilityScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Shift Blocks
-            ShiftBlock(
-                title = "Turno Mañana",
-                icon = Icons.Default.LightMode,
-                startTime = "08:00",
-                endTime = "14:00",
-                isSelected = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            ShiftBlock(
-                title = "Turno Tarde",
-                icon = Icons.Default.DarkMode,
-                startTime = "16:00",
-                endTime = "20:00",
-                isSelected = false
-            )
+            uiState.blocks.forEachIndexed { index, block ->
+                ShiftBlock(
+                    block = block,
+                    icon = block.iconForTitle(),
+                    isSelected = uiState.selectedBlockTitle == block.title,
+                    onClick = { viewModel.selectBlock(block.title) },
+                    onDelete = { viewModel.deleteBlock(index) }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Fee Section
             Text(
                 text = "Tarifa de consulta",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             OutlinedTextField(
-                value = fee,
-                onValueChange = { fee = it },
+                value = uiState.consultationFee,
+                onValueChange = viewModel::updateConsultationFee,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 prefix = { Text("$ ", color = TextPrimary) },
@@ -204,7 +231,7 @@ fun DoctorAvailabilityScreen(
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            
+
             Text(
                 text = "Este precio se mostrará a los pacientes al reservar.",
                 style = MaterialTheme.typography.bodySmall,
@@ -214,9 +241,12 @@ fun DoctorAvailabilityScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Save Button
             Button(
-                onClick = { },
+                onClick = {
+                    scope.launch {
+                        viewModel.saveAvailability(doctorId)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -227,8 +257,66 @@ fun DoctorAvailabilityScreen(
                 Spacer(modifier = Modifier.width(10.dp))
                 Text("Guardar cambios", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-            
+
             Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+private fun MonthHeader() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Octubre 2023",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
+        Row {
+            Icon(Icons.Default.KeyboardArrowLeft, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.KeyboardArrowRight, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun CalendarStrip(
+    selectedDay: String,
+    onDaySelected: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = AppWhite,
+        border = BorderStroke(1.dp, BorderSoft.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf("D", "L", "M", "M", "J", "V", "S").forEach { day ->
+                    Text(
+                        text = day,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        modifier = Modifier.width(36.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                CalendarDay("29", isSelected = selectedDay == "29", isPrevMonth = true, onClick = { onDaySelected("29") })
+                CalendarDay("30", isSelected = selectedDay == "30", isPrevMonth = true, onClick = { onDaySelected("30") })
+                CalendarDay("1", isSelected = selectedDay == "1", isHighlighted = selectedDay != "1", onClick = { onDaySelected("1") })
+                CalendarDay("2", isSelected = selectedDay == "2", onClick = { onDaySelected("2") })
+                CalendarDay("3", isSelected = selectedDay == "3", onClick = { onDaySelected("3") })
+                CalendarDay("4", isSelected = selectedDay == "4", onClick = { onDaySelected("4") })
+                CalendarDay("5", isSelected = selectedDay == "5", onClick = { onDaySelected("5") })
+            }
         }
     }
 }
@@ -238,7 +326,8 @@ private fun CalendarDay(
     day: String,
     isSelected: Boolean,
     isHighlighted: Boolean = false,
-    isPrevMonth: Boolean = false
+    isPrevMonth: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     val backgroundColor = when {
         isSelected -> PrimaryBlue
@@ -255,7 +344,8 @@ private fun CalendarDay(
         modifier = Modifier
             .size(40.dp, 48.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(backgroundColor),
+            .background(backgroundColor)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -269,17 +359,19 @@ private fun CalendarDay(
 
 @Composable
 private fun ShiftBlock(
-    title: String,
+    block: DoctorAvailabilityBlockUi,
     icon: ImageVector,
-    startTime: String,
-    endTime: String,
-    isSelected: Boolean
+    isSelected: Boolean,
+    onClick: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         color = SecondaryBlue.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, if (isSelected) Color.Transparent else BorderSoft.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, if (isSelected) PrimaryBlue else BorderSoft.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -290,9 +382,11 @@ private fun ShiftBlock(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(icon, null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(title, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                    Text(block.title, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
                 }
-                Icon(Icons.Default.Delete, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Delete, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -302,18 +396,20 @@ private fun ShiftBlock(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TimePickerField(label = "Inicio", time = startTime, modifier = Modifier.weight(1f))
-                
+                TimePickerField(label = "Inicio", time = block.startTime, modifier = Modifier.weight(1f))
+
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForward,
                     null,
                     tint = TextSecondary,
-                    modifier = Modifier.padding(horizontal = 12.dp).size(20.dp)
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .size(20.dp)
                 )
-                
+
                 TimePickerField(
                     label = "Fin",
-                    time = endTime,
+                    time = block.endTime,
                     modifier = Modifier.weight(1f),
                     isFocused = isSelected
                 )
@@ -343,9 +439,22 @@ private fun TimePickerField(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = time, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
-                Icon(Icons.Default.AccessTime, null, tint = if (isFocused) PrimaryBlue else TextSecondary, modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.AccessTime,
+                    null,
+                    tint = if (isFocused) PrimaryBlue else TextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
+    }
+}
+
+private fun DoctorAvailabilityBlockUi.iconForTitle(): ImageVector {
+    return when {
+        title.contains("mañana", ignoreCase = true) -> Icons.Default.LightMode
+        title.contains("tarde", ignoreCase = true) -> Icons.Default.DarkMode
+        else -> Icons.Default.AccessTime
     }
 }
 

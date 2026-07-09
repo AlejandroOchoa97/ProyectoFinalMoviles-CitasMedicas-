@@ -7,6 +7,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.screens.auth.LoginScreen
@@ -24,6 +25,7 @@ import proyecto.moviles.citasmedicas.ui.screens.patient.UserProfileScreen
 import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorHomeScreen
 import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorAppointmentDetailScreen
 import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorAvailabilityScreen
+import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorProfileScreen
 import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 
@@ -33,7 +35,8 @@ fun AppNavigation(
     startDestination: String = Routes.SPLASH,
     appointmentRepository: AppointmentRepository? = null,
     patientRepository: PatientRepository? = null,
-    doctorRepository: DoctorRepository? = null
+    doctorRepository: DoctorRepository? = null,
+    doctorAvailabilityRepository: DoctorAvailabilityRepository? = null
 ) {
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
@@ -122,6 +125,7 @@ fun AppNavigation(
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
+            onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
             onAppointmentClick = { id ->
                 selectedAppointmentId = id
                 currentRoute = Routes.DOCTOR_APPOINTMENT_DETAIL
@@ -139,7 +143,18 @@ fun AppNavigation(
         )
         Routes.DOCTOR_AVAILABILITY -> DoctorAvailabilityScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },
-            onNavigateToHome = { currentRoute = Routes.DOCTOR_HOME }
+            onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
+            onNavigateToHome = { currentRoute = Routes.DOCTOR_HOME },
+            availabilityRepository = doctorAvailabilityRepository,
+            doctorId = 1
+        )
+        Routes.DOCTOR_PROFILE -> DoctorProfileScreen(
+            onBack = { currentRoute = Routes.DOCTOR_HOME },
+            onNavigateHome = { currentRoute = Routes.DOCTOR_HOME },
+            onNavigateAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
+            onLogout = { currentRoute = Routes.LOGIN },
+            doctorRepository = doctorRepository,
+            doctorId = 1
         )
         else -> LoginScreen(
             onLoginSuccess = { currentRoute = Routes.PATIENT_HOME },

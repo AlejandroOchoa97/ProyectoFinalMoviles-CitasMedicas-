@@ -13,7 +13,7 @@ object DatabaseProvider {
             MediCitasDatabase::class.java,
             "medicitas_database"
         )
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration(true)
             .build()
             .also {
                 database = it

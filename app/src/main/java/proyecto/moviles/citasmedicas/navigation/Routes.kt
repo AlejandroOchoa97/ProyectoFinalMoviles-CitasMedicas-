@@ -18,5 +18,6 @@ object Routes {
     const val DOCTOR_HOME = "doctor_home"
     const val DOCTOR_APPOINTMENT_DETAIL = "doctor_appointment_detail"
     const val DOCTOR_AVAILABILITY = "doctor_availability"
+    const val DOCTOR_PROFILE = "doctor_profile"
 }
 
