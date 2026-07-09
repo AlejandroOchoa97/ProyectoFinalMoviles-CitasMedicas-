@@ -8,6 +8,7 @@ import proyecto.moviles.citasmedicas.data.SampleData
 import proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity
 import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.model.DoctorAppointment
 import java.time.LocalDate
@@ -49,7 +50,8 @@ data class DoctorHomeUiState(
  */
 class DoctorHomeViewModel(
     private val appointmentRepository: AppointmentRepository? = null,
-    private val patientRepository: PatientRepository? = null
+    private val patientRepository: PatientRepository? = null,
+    private val doctorRepository: DoctorRepository? = null
 ) : ViewModel() {
 
     var uiState by mutableStateOf(DoctorHomeUiState())
@@ -69,6 +71,7 @@ class DoctorHomeViewModel(
         uiState = uiState.copy(isLoading = true, errorMessage = null)
 
         try {
+            val doctor = doctorRepository?.getDoctorById(doctorId)
             val appointments = appointmentRepository
                 .getAppointmentsByDoctorId(doctorId)
                 .map { appointment ->
@@ -77,6 +80,7 @@ class DoctorHomeViewModel(
                 }
 
             uiState = uiState.copy(
+                doctorName = doctor?.name?.toDoctorHeaderName() ?: uiState.doctorName,
                 appointments = appointments,
                 isLoading = false,
                 errorMessage = null
@@ -131,5 +135,9 @@ class DoctorHomeViewModel(
             "URGENT" -> "Urgente"
             else -> this
         }
+    }
+
+    private fun String.toDoctorHeaderName(): String {
+        return uppercase()
     }
 }

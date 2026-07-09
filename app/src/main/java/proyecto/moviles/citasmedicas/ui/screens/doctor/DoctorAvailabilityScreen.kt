@@ -258,7 +258,9 @@ fun DoctorAvailabilityScreen(
                 Text("Guardar cambios", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            // Espacio extra para que el botón no quede oculto detrás del BottomNavigationBar
+            // ni de la barra de navegación del sistema en pantallas pequeñas.
+            Spacer(modifier = Modifier.height(140.dp))
         }
     }
 }

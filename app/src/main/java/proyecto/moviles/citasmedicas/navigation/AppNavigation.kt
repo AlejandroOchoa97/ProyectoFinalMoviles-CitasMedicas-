@@ -133,6 +133,7 @@ fun AppNavigation(
             onNavigateToAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
             appointmentRepository = appointmentRepository,
             patientRepository = patientRepository,
+            doctorRepository = doctorRepository,
             doctorId = 1
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(

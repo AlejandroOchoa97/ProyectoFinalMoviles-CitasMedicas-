@@ -1,32 +1,53 @@
 package proyecto.moviles.citasmedicas.ui.screens.doctor
 
-/* Inicio médico: filtra citas del día y abre detalle o configuración de disponibilidad. */
+/* Inicio médico: filtra citas del día y abre detalle o disponibilidad. */
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.components.DoctorAppointmentCard
-import proyecto.moviles.citasmedicas.ui.theme.*
+import proyecto.moviles.citasmedicas.ui.theme.AppBackground
+import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
+import proyecto.moviles.citasmedicas.ui.theme.AppWhite
+import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
+import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
+import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
+import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
+import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAppointmentFilter
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorHomeViewModel
 
@@ -39,18 +60,20 @@ fun DoctorHomeScreen(
     onNavigateToAvailability: () -> Unit = {},
     appointmentRepository: AppointmentRepository? = null,
     patientRepository: PatientRepository? = null,
+    doctorRepository: DoctorRepository? = null,
     doctorId: Int = 1
 ) {
-    // ViewModel temporal para cargar las citas del médico desde Room.
-    val viewModel = remember(appointmentRepository, patientRepository) {
+    val viewModel = remember(appointmentRepository, patientRepository, doctorRepository) {
         DoctorHomeViewModel(
             appointmentRepository = appointmentRepository,
-            patientRepository = patientRepository
+            patientRepository = patientRepository,
+            doctorRepository = doctorRepository
         )
     }
 
     val uiState = viewModel.uiState
 
+    // Carga las citas y el nombre real del médico desde Room.
     LaunchedEffect(doctorId) {
         viewModel.loadAppointments(doctorId)
     }
@@ -68,12 +91,20 @@ fun DoctorHomeScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar", tint = PrimaryBlue)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar",
+                            tint = PrimaryBlue
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = onProfileClick) {
-                        Icon(Icons.Default.Person, contentDescription = "Perfil", tint = PrimaryBlue)
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = PrimaryBlue
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppWhite)
@@ -98,7 +129,7 @@ fun DoctorHomeScreen(
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = uiState.doctorName,
                 style = MaterialTheme.typography.bodySmall,
@@ -106,17 +137,16 @@ fun DoctorHomeScreen(
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 1.sp
             )
-            
+
             Text(
                 text = "Mis citas de hoy",
                 style = MaterialTheme.typography.headlineMedium,
                 color = TextPrimary,
                 fontWeight = FontWeight.Bold
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Filter Chips
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -137,7 +167,7 @@ fun DoctorHomeScreen(
                     onClick = { viewModel.selectFilter(DoctorAppointmentFilter.FOLLOW_UP) }
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
 
             uiState.errorMessage?.let { message ->
@@ -148,7 +178,7 @@ fun DoctorHomeScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
-            
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize(),
