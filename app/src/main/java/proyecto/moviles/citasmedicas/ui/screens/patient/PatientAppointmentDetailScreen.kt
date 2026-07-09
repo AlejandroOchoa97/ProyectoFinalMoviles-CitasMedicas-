@@ -1,6 +1,6 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
-/* Detalle del paciente: muestra la cita y carga Maps solo si existen coordenadas reales. */
+/* Detalle del paciente: muestra una cita real cargada desde Room. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -36,6 +36,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,7 +53,8 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
-import proyecto.moviles.citasmedicas.data.SampleData
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.model.Appointment
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.components.StatusBadge
@@ -65,6 +67,7 @@ import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import proyecto.moviles.citasmedicas.ui.viewmodel.PatientAppointmentDetailViewModel
 
 @Composable
 fun PatientAppointmentDetailScreen(
@@ -73,13 +76,25 @@ fun PatientAppointmentDetailScreen(
     onNavigateHome: () -> Unit = {},
     onNavigateHistory: () -> Unit = {},
     onNavigateProfile: () -> Unit = {},
+    appointmentRepository: AppointmentRepository? = null,
+    doctorRepository: DoctorRepository? = null,
     modifier: Modifier = Modifier,
     showInteractiveMap: Boolean = true
 ) {
-    val appointment = SampleData.sampleAppointments.firstOrNull { it.id == appointmentId }
-        ?: SampleData.sampleAppointments.first()
+    val viewModel = remember(appointmentRepository, doctorRepository) {
+        PatientAppointmentDetailViewModel(
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository
+        )
+    }
+    val uiState = viewModel.uiState
+    val appointment = uiState.appointment
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(appointmentId) {
+        viewModel.loadAppointment(appointmentId)
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -115,21 +130,30 @@ fun PatientAppointmentDetailScreen(
             ) {
                 Column(Modifier.padding(14.dp)) {
                     Text("Motivo de consulta", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        "Chequeo anual de rutina y seguimiento de presión arterial. Paciente refiere fatiga ocasional durante ejercicio leve.",
-                        color = TextPrimary,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Text(uiState.reason, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
+            uiState.errorMessage?.let { message ->
+                Text(message, color = MaterialTheme.colorScheme.error)
+            }
+
             Button(
-                onClick = { scope.launch { snackbarHostState.showSnackbar("Cancelación de cita pendiente") } },
+                onClick = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Cancelación de cita pendiente")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = AppWhite, contentColor = MaterialTheme.colorScheme.error),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppWhite,
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
                 contentPadding = PaddingValues(vertical = 13.dp)
-            ) { Text("Cancelar cita") }
-            Spacer(Modifier.height(8.dp))
+            ) {
+                Text("Cancelar cita")
+            }
+            Spacer(Modifier.height(80.dp))
         }
     }
 }
@@ -137,7 +161,10 @@ fun PatientAppointmentDetailScreen(
 @Composable
 private fun DetailTopBar(onBack: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) {
@@ -151,7 +178,9 @@ private fun DetailTopBar(onBack: () -> Unit) {
 private fun DoctorHeader(appointment: Appointment) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            modifier = Modifier.size(74.dp).background(SecondaryBlue, CircleShape),
+            modifier = Modifier
+                .size(74.dp)
+                .background(SecondaryBlue, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Filled.Person, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(46.dp))
@@ -168,10 +197,12 @@ private fun DoctorHeader(appointment: Appointment) {
 private fun AppointmentSummary(appointment: Appointment) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         DetailCard("Especialidad", appointment.specialty, Modifier.weight(1f))
         DetailCard("Costo", appointment.price, Modifier.weight(1f))
     }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppWhite),
@@ -183,7 +214,11 @@ private fun AppointmentSummary(appointment: Appointment) {
             Spacer(Modifier.size(10.dp))
             Column {
                 Text("Fecha y hora", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                Text("${appointment.date.format(dateFormatter)}, ${appointment.time.format(timeFormatter)}", color = TextPrimary, fontWeight = FontWeight.Medium)
+                Text(
+                    "${appointment.date.format(dateFormatter)}, ${appointment.time.format(timeFormatter)}",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
@@ -222,9 +257,13 @@ private fun LocationSection(appointment: Appointment, showInteractiveMap: Boolea
                 Spacer(Modifier.size(10.dp))
                 Column {
                     Text("Consultorio", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                    Text(appointment.clinicName.ifBlank { "Ubicación pendiente" }, color = TextPrimary, fontWeight = FontWeight.SemiBold)
                     Text(
-                        appointment.clinicAddress.ifBlank { "Agrega la dirección y coordenadas reales en SampleData." },
+                        appointment.clinicName.ifBlank { "Ubicación pendiente" },
+                        color = TextPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        appointment.clinicAddress.ifBlank { "Dirección pendiente" },
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -239,13 +278,16 @@ private fun LocationSection(appointment: Appointment, showInteractiveMap: Boolea
                 )
             } else {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(180.dp).background(SecondaryBlue),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .background(SecondaryBlue),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.LocationOn, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(38.dp))
                         Text(
-                            if (hasCoordinates) "Mapa disponible al ejecutar la app" else "Mapa pendiente",
+                            "Mapa pendiente: faltan coordenadas reales del consultorio",
                             color = PrimaryBlue,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
@@ -266,7 +308,9 @@ private fun AppointmentMap(latitude: Double, longitude: Double, title: String) {
     }
 
     GoogleMap(
-        modifier = Modifier.fillMaxWidth().height(180.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp),
         cameraPositionState = cameraPositionState
     ) {
         Marker(state = MarkerState(position = location), title = title)

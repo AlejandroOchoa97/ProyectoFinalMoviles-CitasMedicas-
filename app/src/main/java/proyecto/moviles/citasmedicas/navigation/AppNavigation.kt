@@ -84,14 +84,19 @@ fun AppNavigation(
             onAppointmentDetails = { id ->
                 selectedAppointmentId = id
                 currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
-            }
+            },
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository,
+            patientId = 1
         )
         Routes.PATIENT_APPOINTMENT_DETAIL -> PatientAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository
         )
         Routes.SEARCH_DOCTOR -> SearchDoctorScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
@@ -115,13 +120,22 @@ fun AppNavigation(
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
+            onAppointmentDetails = { id ->
+                selectedAppointmentId = id
+                currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
+            },
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository,
+            patientId = 1
         )
         Routes.USER_PROFILE -> UserProfileScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onLogout = { currentRoute = Routes.LOGIN }
+            onLogout = { currentRoute = Routes.LOGIN },
+            patientRepository = patientRepository,
+            patientId = 1
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },

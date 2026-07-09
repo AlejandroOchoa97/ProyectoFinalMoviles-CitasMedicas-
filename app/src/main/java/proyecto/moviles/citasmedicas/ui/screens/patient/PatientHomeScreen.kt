@@ -1,6 +1,6 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
-/* Inicio del paciente: lista citas simuladas y conecta búsqueda, detalle, historial y perfil. */
+/* Inicio del paciente: muestra citas del paciente cargadas desde Room. */
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,22 +25,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import proyecto.moviles.citasmedicas.data.SampleData
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.ui.components.AppointmentCard
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
@@ -49,9 +44,10 @@ import proyecto.moviles.citasmedicas.ui.theme.AppWhite
 import proyecto.moviles.citasmedicas.ui.theme.BorderSoft
 import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
-import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import proyecto.moviles.citasmedicas.ui.viewmodel.PatientAppointmentFilter
+import proyecto.moviles.citasmedicas.ui.viewmodel.PatientAppointmentsViewModel
 
 @Composable
 fun PatientHomeScreen(
@@ -60,18 +56,28 @@ fun PatientHomeScreen(
     onAppointmentDetails: (Int) -> Unit = {},
     onNavigateHistory: () -> Unit = {},
     onNavigateProfile: () -> Unit = {},
+    appointmentRepository: AppointmentRepository? = null,
+    doctorRepository: DoctorRepository? = null,
+    patientId: Int = 1,
     modifier: Modifier = Modifier
 ) {
-    var selectedFilter by remember { mutableStateOf("Próximas") }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val filters = listOf("Próximas", "Pendientes", "Pasadas")
+    val viewModel = remember(appointmentRepository, doctorRepository) {
+        PatientAppointmentsViewModel(
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository
+        )
+    }
+    val uiState = viewModel.uiState
+
+    // Carga las citas del paciente activo desde Room.
+    LaunchedEffect(patientId) {
+        viewModel.loadAppointments(patientId)
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = AppBackground,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { PatientTopBar(onBack) },
+        topBar = { PatientTopBar(onBack, onNavigateProfile) },
         bottomBar = {
             BottomNavigationBar(selectedIndex = 0) { index ->
                 when (index) {
@@ -91,7 +97,9 @@ fun PatientHomeScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 92.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -104,35 +112,71 @@ fun PatientHomeScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    filters.forEach { filter ->
-                        val selected = selectedFilter == filter
-                        AssistChip(
-                            onClick = { selectedFilter = filter },
-                            label = { Text(filter) },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = if (selected) PrimaryBlue else BorderSoft,
-                                labelColor = if (selected) AppWhite else TextSecondary
-                            ),
-                            border = null
-                        )
+                    FilterChip("Próximas", uiState.selectedFilter == PatientAppointmentFilter.UPCOMING) {
+                        viewModel.selectFilter(PatientAppointmentFilter.UPCOMING)
                     }
+                    FilterChip("Pendientes", uiState.selectedFilter == PatientAppointmentFilter.PENDING) {
+                        viewModel.selectFilter(PatientAppointmentFilter.PENDING)
+                    }
+                    FilterChip("Pasadas", uiState.selectedFilter == PatientAppointmentFilter.PAST) {
+                        viewModel.selectFilter(PatientAppointmentFilter.PAST)
+                    }
+                }
+
+                uiState.errorMessage?.let { message ->
+                    Spacer(Modifier.height(12.dp))
+                    Text(message, color = MaterialTheme.colorScheme.error)
                 }
             }
 
-            items(SampleData.sampleAppointments, key = { it.id }) { appointment ->
-                AppointmentCard(
-                    appointment = appointment,
-                    onDetailsClick = { onAppointmentDetails(appointment.id) }
-                )
+            if (uiState.visibleAppointments.isEmpty()) {
+                item {
+                    Text(
+                        text = "No hay citas para este filtro.",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 20.dp)
+                    )
+                }
+            } else {
+                items(uiState.visibleAppointments, key = { it.id }) { appointment ->
+                    AppointmentCard(
+                        appointment = appointment,
+                        onDetailsClick = { onAppointmentDetails(appointment.id) }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PatientTopBar(onBack: () -> Unit) {
+private fun FilterChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    AssistChip(
+        onClick = onClick,
+        label = { Text(label) },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = if (selected) PrimaryBlue else BorderSoft,
+            labelColor = if (selected) AppWhite else TextSecondary
+        ),
+        border = null
+    )
+}
+
+@Composable
+private fun PatientTopBar(
+    onBack: () -> Unit,
+    onProfileClick: () -> Unit
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) {
@@ -140,7 +184,7 @@ private fun PatientTopBar(onBack: () -> Unit) {
         }
         Text("MediCitas", color = PrimaryBlue, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.weight(1f))
-        IconButton(onClick = {}) {
+        IconButton(onClick = onProfileClick) {
             Icon(Icons.Filled.AccountCircle, contentDescription = "Perfil", tint = PrimaryBlue, modifier = Modifier.size(25.dp))
         }
     }

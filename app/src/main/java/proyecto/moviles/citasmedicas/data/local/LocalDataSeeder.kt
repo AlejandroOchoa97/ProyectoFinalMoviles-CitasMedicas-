@@ -194,6 +194,33 @@ class LocalDataSeeder(
                 reason = "Revisión de irritación en la piel.",
                 status = "PENDING",
                 createdAt = "2024-10-03"
+            ),
+            AppointmentEntity(
+                patientId = juan.id,
+                doctorId = cardiologist.id,
+                date = "2024-05-15",
+                time = "09:30",
+                reason = "Consulta de seguimiento cardiovascular. Se entregó receta médica.",
+                status = "COMPLETED",
+                createdAt = "2024-05-01"
+            ),
+            AppointmentEntity(
+                patientId = juan.id,
+                doctorId = pediatrician.id,
+                date = "2024-05-02",
+                time = "14:00",
+                reason = "Consulta cancelada por cambio de agenda del paciente.",
+                status = "CANCELLED",
+                createdAt = "2024-04-28"
+            ),
+            AppointmentEntity(
+                patientId = juan.id,
+                doctorId = dermatologist.id,
+                date = "2024-04-20",
+                time = "11:15",
+                reason = "Revisión dermatológica completada. Se indicó tratamiento tópico.",
+                status = "COMPLETED",
+                createdAt = "2024-04-10"
             )
         ).forEach { appointment ->
             appointmentRepository.insertAppointment(appointment)

@@ -1,6 +1,6 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
-/* Historial: filtra consultas simuladas y conecta las secciones de la navegación inferior. */
+/* Historial del paciente: muestra citas completadas/canceladas desde Room. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Person
@@ -29,24 +29,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.components.StatusBadge
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
@@ -59,46 +53,35 @@ import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.SuccessText
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
-
-private data class HistoryAppointment(
-    val id: Int,
-    val doctor: String,
-    val specialty: String,
-    val date: LocalDate,
-    val time: LocalTime,
-    val status: String,
-    val hasPrescription: Boolean
-)
-
-private val historyAppointments = listOf(
-    HistoryAppointment(1, "Dra. Elena Ramírez", "Cardiología", LocalDate.of(2024, 5, 15), LocalTime.of(9, 30), "Completada", true),
-    HistoryAppointment(2, "Dr. Ricardo Silva", "Pediatría", LocalDate.of(2024, 5, 2), LocalTime.of(14, 0), "Cancelada", false),
-    HistoryAppointment(3, "Dra. Sofía Martínez", "Dermatología", LocalDate.of(2024, 4, 20), LocalTime.of(11, 15), "Completada", true),
-    HistoryAppointment(4, "Dr. Manuel Torres", "Medicina General", LocalDate.of(2024, 4, 10), LocalTime.of(16, 45), "Completada", false)
-)
+import proyecto.moviles.citasmedicas.ui.viewmodel.AppointmentHistoryViewModel
+import proyecto.moviles.citasmedicas.ui.viewmodel.HistoryFilter
+import proyecto.moviles.citasmedicas.ui.viewmodel.PatientHistoryAppointment
 
 @Composable
 fun AppointmentHistoryScreen(
     onNavigateHome: () -> Unit,
     onNavigateProfile: () -> Unit,
+    onAppointmentDetails: (Int) -> Unit = {},
+    appointmentRepository: AppointmentRepository? = null,
+    doctorRepository: DoctorRepository? = null,
+    patientId: Int = 1,
     modifier: Modifier = Modifier
 ) {
-    var selectedFilter by remember { mutableStateOf("Todas") }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val filters = listOf("Todas", "Recetas disponibles", "Canceladas")
-    val visibleAppointments = historyAppointments.filter {
-        when (selectedFilter) {
-            "Recetas disponibles" -> it.hasPrescription
-            "Canceladas" -> it.status == "Cancelada"
-            else -> true
-        }
+    val viewModel = remember(appointmentRepository, doctorRepository) {
+        AppointmentHistoryViewModel(
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository
+        )
+    }
+    val uiState = viewModel.uiState
+
+    LaunchedEffect(patientId) {
+        viewModel.loadHistory(patientId)
     }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = AppBackground,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             BottomNavigationBar(selectedIndex = 1) { index ->
                 when (index) {
@@ -109,7 +92,9 @@ fun AppointmentHistoryScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -118,23 +103,38 @@ fun AppointmentHistoryScreen(
                 Spacer(Modifier.size(20.dp))
                 Text("Historial de citas", color = TextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("Revisa tus consultas pasadas y recetas disponibles.", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    filters.forEach { filter ->
-                        AssistChip(
-                            onClick = { selectedFilter = filter },
-                            label = { Text(filter, style = MaterialTheme.typography.bodySmall) },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = if (selectedFilter == filter) PrimaryBlue else BorderSoft,
-                                labelColor = if (selectedFilter == filter) AppWhite else TextSecondary
-                            ),
-                            border = null
-                        )
+                    HistoryChip("Todas", uiState.selectedFilter == HistoryFilter.ALL) {
+                        viewModel.selectFilter(HistoryFilter.ALL)
+                    }
+                    HistoryChip("Recetas disponibles", uiState.selectedFilter == HistoryFilter.PRESCRIPTIONS) {
+                        viewModel.selectFilter(HistoryFilter.PRESCRIPTIONS)
+                    }
+                    HistoryChip("Canceladas", uiState.selectedFilter == HistoryFilter.CANCELLED) {
+                        viewModel.selectFilter(HistoryFilter.CANCELLED)
                     }
                 }
+
+                uiState.errorMessage?.let { message ->
+                    Spacer(Modifier.size(12.dp))
+                    Text(message, color = MaterialTheme.colorScheme.error)
+                }
             }
-            items(visibleAppointments, key = { it.id }) { appointment ->
-                HistoryAppointmentCard(appointment) {
-                    scope.launch { snackbarHostState.showSnackbar("Detalle histórico pendiente") }
+
+            if (uiState.visibleAppointments.isEmpty()) {
+                item {
+                    Text(
+                        "No hay citas en el historial para este filtro.",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                items(uiState.visibleAppointments, key = { it.id }) { appointment ->
+                    HistoryAppointmentCard(appointment) {
+                        onAppointmentDetails(appointment.id)
+                    }
                 }
             }
         }
@@ -142,9 +142,26 @@ fun AppointmentHistoryScreen(
 }
 
 @Composable
-private fun HistoryAppointmentCard(appointment: HistoryAppointment, onDetails: () -> Unit) {
+private fun HistoryChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    AssistChip(
+        onClick = onClick,
+        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = if (selected) PrimaryBlue else BorderSoft,
+            labelColor = if (selected) AppWhite else TextSecondary
+        ),
+        border = null
+    )
+}
+
+@Composable
+private fun HistoryAppointmentCard(
+    appointment: PatientHistoryAppointment,
+    onDetails: () -> Unit
+) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM, yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
     Card(
         colors = CardDefaults.cardColors(containerColor = AppWhite),
         border = BorderStroke(1.dp, BorderSoft),
@@ -153,9 +170,13 @@ private fun HistoryAppointmentCard(appointment: HistoryAppointment, onDetails: (
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 androidx.compose.foundation.layout.Box(
-                    modifier = Modifier.size(44.dp).background(SecondaryBlue, CircleShape),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(SecondaryBlue, CircleShape),
                     contentAlignment = Alignment.Center
-                ) { Icon(Icons.Filled.Person, null, tint = PrimaryBlue) }
+                ) {
+                    Icon(Icons.Filled.Person, null, tint = PrimaryBlue)
+                }
                 Spacer(Modifier.size(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(appointment.doctor, fontWeight = FontWeight.SemiBold, color = TextPrimary)
@@ -163,7 +184,13 @@ private fun HistoryAppointmentCard(appointment: HistoryAppointment, onDetails: (
                 }
                 StatusBadge(appointment.status)
             }
-            Text("▣  ${appointment.date.format(dateFormatter)}        ◷  ${appointment.time.format(timeFormatter)}", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+
+            Text(
+                "${appointment.date.format(dateFormatter)}        ${appointment.time.format(timeFormatter)}",
+                color = TextSecondary,
+                style = MaterialTheme.typography.bodySmall
+            )
+
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (appointment.hasPrescription) {
                     Icon(Icons.Filled.Description, null, tint = SuccessText, modifier = Modifier.size(17.dp))
@@ -174,7 +201,9 @@ private fun HistoryAppointmentCard(appointment: HistoryAppointment, onDetails: (
                     onClick = onDetails,
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                     shape = RoundedCornerShape(18.dp)
-                ) { Text("Ver detalles") }
+                ) {
+                    Text("Ver detalles")
+                }
             }
         }
     }
