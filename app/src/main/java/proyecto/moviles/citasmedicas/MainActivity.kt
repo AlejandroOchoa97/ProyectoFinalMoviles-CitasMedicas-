@@ -30,7 +30,8 @@ class MainActivity : ComponentActivity() {
             MediCitasTheme {
                 AppNavigation(
                     appointmentRepository = appContainer.appointmentRepository,
-                    patientRepository = appContainer.patientRepository
+                    patientRepository = appContainer.patientRepository,
+                    doctorRepository = appContainer.doctorRepository
                 )
             }
         }

@@ -1,6 +1,6 @@
 package proyecto.moviles.citasmedicas.ui.screens.patient
 
-/* Búsqueda de médicos: filtra SampleData por texto/especialidad y abre el agendamiento. */
+/* Búsqueda de médicos: consulta médicos locales y abre el agendamiento. */
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,18 +32,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import proyecto.moviles.citasmedicas.data.SampleData
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.components.DoctorCard
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
@@ -54,6 +50,7 @@ import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import proyecto.moviles.citasmedicas.ui.viewmodel.SearchDoctorViewModel
 
 @Composable
 fun SearchDoctorScreen(
@@ -62,16 +59,19 @@ fun SearchDoctorScreen(
     onNavigateHome: () -> Unit = {},
     onNavigateHistory: () -> Unit = {},
     onNavigateProfile: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    doctorRepository: DoctorRepository? = null
 ) {
-    var query by remember { mutableStateOf("") }
-    var selectedSpecialty by remember { mutableStateOf("Todos") }
+    // ViewModel temporal para cargar médicos desde Room.
+    val viewModel = remember(doctorRepository) {
+        SearchDoctorViewModel(doctorRepository)
+    }
+
+    val uiState = viewModel.uiState
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val specialties = listOf("Todos", "Medicina General", "Cardiología", "Pediatría", "Dermatología")
-    val doctors = SampleData.sampleDoctors.filter { doctor ->
-        (selectedSpecialty == "Todos" || doctor.specialty == selectedSpecialty) &&
-            (query.isBlank() || doctor.name.contains(query, true) || doctor.specialty.contains(query, true))
+
+    LaunchedEffect(Unit) {
+        viewModel.loadDoctors()
     }
 
     Scaffold(
@@ -91,8 +91,8 @@ fun SearchDoctorScreen(
     ) { innerPadding ->
         Column(Modifier.fillMaxSize().padding(innerPadding)) {
             OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
+                value = uiState.query,
+                onValueChange = viewModel::updateQuery,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                 placeholder = { Text("Buscar por nombre o especialidad") },
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
@@ -110,10 +110,10 @@ fun SearchDoctorScreen(
                 contentPadding = PaddingValues(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(specialties) { specialty ->
+                items(uiState.specialties) { specialty ->
                     FilterChip(
-                        selected = selectedSpecialty == specialty,
-                        onClick = { selectedSpecialty = specialty },
+                        selected = uiState.selectedSpecialty == specialty,
+                        onClick = { viewModel.selectSpecialty(specialty) },
                         label = { Text(specialty) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = PrimaryBlue,
@@ -126,12 +126,21 @@ fun SearchDoctorScreen(
                 }
             }
 
+            uiState.errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(doctors, key = { it.id }) { doctor ->
+                items(uiState.visibleDoctors, key = { it.id }) { doctor ->
                     DoctorCard(
                         doctor = doctor,
                         onProfileClick = { onDoctorSelected(doctor.id) }
