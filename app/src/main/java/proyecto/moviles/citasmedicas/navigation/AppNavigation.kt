@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.ui.screens.auth.LoginScreen
 import proyecto.moviles.citasmedicas.ui.screens.auth.RegisterScreen
 import proyecto.moviles.citasmedicas.ui.screens.auth.RecoverPasswordScreen
@@ -26,9 +27,13 @@ import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 
 // Punto de entrada de navegación. Por ahora el único destino es el inicio de sesión.
 @Composable
-fun AppNavigation(startDestination: String = Routes.SPLASH) {
+fun AppNavigation(
+    startDestination: String = Routes.SPLASH,
+    appointmentRepository: AppointmentRepository? = null
+) {
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
+    var selectedDoctorId by rememberSaveable { mutableStateOf(1) }
 
     when (currentRoute) {
         Routes.SPLASH -> SplashScreen(
@@ -83,7 +88,10 @@ fun AppNavigation(startDestination: String = Routes.SPLASH) {
         )
         Routes.SEARCH_DOCTOR -> SearchDoctorScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
-            onDoctorSelected = { currentRoute = Routes.SCHEDULE_DETAILS },
+            onDoctorSelected = { doctorId ->
+                selectedDoctorId = doctorId
+                currentRoute = Routes.SCHEDULE_DETAILS
+            },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
             onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
@@ -92,7 +100,10 @@ fun AppNavigation(startDestination: String = Routes.SPLASH) {
             onBack = { currentRoute = Routes.SEARCH_DOCTOR },
             onConfirm = { _, _, _ ->
                 currentRoute = Routes.PATIENT_HOME
-            }
+            },
+            appointmentRepository = appointmentRepository,
+            patientId = 1,
+            doctorId = selectedDoctorId
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },

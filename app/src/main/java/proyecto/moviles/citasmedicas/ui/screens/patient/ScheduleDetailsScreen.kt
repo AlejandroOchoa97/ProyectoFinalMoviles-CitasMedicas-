@@ -29,11 +29,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
 import proyecto.moviles.citasmedicas.ui.components.ScheduleCalendarCard
 import proyecto.moviles.citasmedicas.ui.components.TimeSlotButton
@@ -53,13 +56,21 @@ import java.time.LocalTime
 fun ScheduleDetailsScreen(
     onBack: () -> Unit,
     onConfirm: (LocalDate, LocalTime, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    appointmentRepository: AppointmentRepository? = null,
+    patientId: Int = 1,
+    doctorId: Int = 1
 ) {
     // ViewModel temporal de la pantalla. Después se podrá inyectar desde navegación.
-    val viewModel = remember { ScheduleAppointmentViewModel() }
+    val viewModel = remember(appointmentRepository) {
+        ScheduleAppointmentViewModel(appointmentRepository)
+    }
 
     // Estado actual que usa la interfaz.
     val uiState = viewModel.uiState
+
+    // Scope para ejecutar operaciones suspend, como guardar en Room.
+    val coroutineScope = rememberCoroutineScope()
 
     /**
      * Esta es la estructura base de la pantalla.
@@ -94,14 +105,24 @@ fun ScheduleDetailsScreen(
                     .padding(horizontal = 20.dp, vertical = 14.dp)
             ) {
                 AppButton(
-                    text = "Confirmar",
+                    text = if (uiState.isSaving) "Guardando..." else "Confirmar",
+                    enabled = !uiState.isSaving,
                     onClick = {
-                        val confirmedState = viewModel.confirmAppointment()
-                        onConfirm(
-                            confirmedState.selectedDate,
-                            confirmedState.selectedTime,
-                            confirmedState.reason
-                        )
+                        coroutineScope.launch {
+                            val saved = viewModel.confirmAppointment(
+                                patientId = patientId,
+                                doctorId = doctorId
+                            )
+
+                            if (saved) {
+                                val confirmedState = viewModel.uiState
+                                onConfirm(
+                                    confirmedState.selectedDate,
+                                    confirmedState.selectedTime,
+                                    confirmedState.reason
+                                )
+                            }
+                        }
                     }
                 )
             }
@@ -221,6 +242,24 @@ fun ScheduleDetailsScreen(
                     cursorColor = PrimaryBlue
                 )
             )
+
+            uiState.errorMessage?.let { message ->
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            uiState.successMessage?.let { message ->
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PrimaryBlue
+                )
+            }
         }
     }
 }

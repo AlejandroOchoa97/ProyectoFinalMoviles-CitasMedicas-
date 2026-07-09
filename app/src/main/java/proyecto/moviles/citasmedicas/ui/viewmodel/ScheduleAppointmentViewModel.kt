@@ -4,9 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 
 /**
  * Estado visual de la pantalla para agendar una cita.
@@ -19,6 +22,9 @@ data class ScheduleAppointmentUiState(
     val visibleMonth: YearMonth = YearMonth.of(2024, 10),
     val selectedTime: LocalTime = LocalTime.of(11, 30),
     val reason: String = "",
+    val isSaving: Boolean = false,
+    val errorMessage: String? = null,
+    val successMessage: String? = null,
     val availableTimes: List<LocalTime> = listOf(
         LocalTime.of(9, 0),
         LocalTime.of(10, 0),
@@ -32,19 +38,27 @@ data class ScheduleAppointmentUiState(
 /**
  * ViewModel de agendamiento.
  *
- * Por ahora solo maneja el estado de la pantalla.
- * En el siguiente paso se conectará con el repositorio de citas para guardar en Room.
+ * Maneja el estado de la pantalla y, cuando recibe un repositorio,
+ * permite guardar la cita en Room.
  */
-class ScheduleAppointmentViewModel : ViewModel() {
+class ScheduleAppointmentViewModel(
+    private val appointmentRepository: AppointmentRepository? = null
+) : ViewModel() {
 
     var uiState by mutableStateOf(ScheduleAppointmentUiState())
         private set
+
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     /**
      * Actualiza la fecha seleccionada en el calendario.
      */
     fun selectDate(date: LocalDate) {
-        uiState = uiState.copy(selectedDate = date)
+        uiState = uiState.copy(
+            selectedDate = date,
+            errorMessage = null,
+            successMessage = null
+        )
     }
 
     /**
@@ -69,22 +83,82 @@ class ScheduleAppointmentViewModel : ViewModel() {
      * Actualiza el horario seleccionado.
      */
     fun selectTime(time: LocalTime) {
-        uiState = uiState.copy(selectedTime = time)
+        uiState = uiState.copy(
+            selectedTime = time,
+            errorMessage = null,
+            successMessage = null
+        )
     }
 
     /**
      * Actualiza el motivo escrito por el paciente.
      */
     fun updateReason(reason: String) {
-        uiState = uiState.copy(reason = reason)
+        uiState = uiState.copy(
+            reason = reason,
+            errorMessage = null,
+            successMessage = null
+        )
     }
 
     /**
-     * Devuelve el estado actual para que la pantalla pueda continuar el flujo.
+     * Guarda la cita en Room usando el repositorio recibido.
      *
-     * Más adelante aquí se podrá validar información o guardar la cita.
+     * Los IDs son temporales mientras se conecta el inicio de sesión real:
+     * - patientId vendrá del paciente autenticado.
+     * - doctorId vendrá del médico seleccionado en la búsqueda.
      */
-    fun confirmAppointment(): ScheduleAppointmentUiState {
-        return uiState.copy(reason = uiState.reason.trim())
+    suspend fun confirmAppointment(
+        patientId: Int,
+        doctorId: Int
+    ): Boolean {
+        val cleanReason = uiState.reason.trim()
+
+        if (cleanReason.isBlank()) {
+            uiState = uiState.copy(
+                errorMessage = "Ingresa el motivo de la consulta."
+            )
+            return false
+        }
+
+        if (appointmentRepository == null) {
+            uiState = uiState.copy(
+                successMessage = "Cita preparada para guardar."
+            )
+            return true
+        }
+
+        uiState = uiState.copy(
+            isSaving = true,
+            errorMessage = null,
+            successMessage = null
+        )
+
+        return try {
+            appointmentRepository.insertAppointment(
+                AppointmentEntity(
+                    patientId = patientId,
+                    doctorId = doctorId,
+                    date = uiState.selectedDate.toString(),
+                    time = uiState.selectedTime.format(timeFormatter),
+                    reason = cleanReason,
+                    status = "PENDING",
+                    createdAt = LocalDate.now().toString()
+                )
+            )
+
+            uiState = uiState.copy(
+                reason = cleanReason,
+                isSaving = false,
+                successMessage = "Cita guardada correctamente."
+            )
+            true
+        } catch (exception: Exception) {
+            uiState = uiState.copy(
+                isSaving = false,
+                errorMessage = "No se pudo guardar la cita. Verifica que exista el paciente y el médico."
+            )
+            false
+        }
     }
 }
