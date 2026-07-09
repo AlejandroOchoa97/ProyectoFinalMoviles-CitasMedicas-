@@ -130,7 +130,9 @@ fun AppNavigation(
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
-            onBack = { currentRoute = Routes.DOCTOR_HOME }
+            onBack = { currentRoute = Routes.DOCTOR_HOME },
+            appointmentRepository = appointmentRepository,
+            patientRepository = patientRepository
         )
         Routes.DOCTOR_AVAILABILITY -> DoctorAvailabilityScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },

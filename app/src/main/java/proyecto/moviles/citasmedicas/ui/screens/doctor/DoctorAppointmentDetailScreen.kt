@@ -14,30 +14,45 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.format.DateTimeFormatter
-import proyecto.moviles.citasmedicas.data.SampleData
-import proyecto.moviles.citasmedicas.model.DoctorAppointment
+import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.theme.*
+import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAppointmentDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorAppointmentDetailScreen(
     appointmentId: Int,
     onBack: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    appointmentRepository: AppointmentRepository? = null,
+    patientRepository: PatientRepository? = null
 ) {
-    val appointment = SampleData.sampleDoctorAppointments.find { it.id == appointmentId } 
-        ?: SampleData.sampleDoctorAppointments.last()
+    // ViewModel temporal para cargar el detalle real desde Room.
+    val viewModel = remember(appointmentRepository, patientRepository) {
+        DoctorAppointmentDetailViewModel(
+            appointmentRepository = appointmentRepository,
+            patientRepository = patientRepository
+        )
+    }
+
+    val uiState = viewModel.uiState
+    val appointment = uiState.appointment
+
+    LaunchedEffect(appointmentId) {
+        viewModel.loadAppointment(appointmentId)
+    }
 
     Scaffold(
         topBar = {
@@ -76,6 +91,15 @@ fun DoctorAppointmentDetailScreen(
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
+
+            uiState.errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // Patient Card
             Card(
