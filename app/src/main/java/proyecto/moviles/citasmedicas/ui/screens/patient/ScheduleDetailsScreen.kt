@@ -48,21 +48,29 @@ import proyecto.moviles.citasmedicas.ui.theme.OutlineGray
 import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 
 @Composable
 fun ScheduleDetailsScreen(
     onBack: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (LocalDate, LocalTime, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Guarda el horario seleccionado
+    // Guarda la fecha seleccionada en el calendario.
+    var selectedDate by remember { mutableStateOf(LocalDate.of(2024, 10, 13)) }
+
+    // Guarda el mes visible del calendario para permitir avanzar o regresar meses.
+    var visibleMonth by remember { mutableStateOf(YearMonth.from(selectedDate)) }
+
+    // Guarda el horario seleccionado.
     var selectedTime by remember { mutableStateOf(LocalTime.of(11, 30)) }
 
-    // Guarda el motivo de la consulta
+    // Guarda el motivo de la consulta.
     var reason by remember { mutableStateOf("") }
 
-    // Lista de horarios disponibles
+    // Lista de horarios disponibles.
     val availableTimes = listOf(
         LocalTime.of(9, 0),
         LocalTime.of(10, 0),
@@ -106,7 +114,9 @@ fun ScheduleDetailsScreen(
             ) {
                 AppButton(
                     text = "Confirmar",
-                    onClick = onConfirm
+                    onClick = {
+                        onConfirm(selectedDate, selectedTime, reason)
+                    }
                 )
             }
         }
@@ -147,8 +157,20 @@ fun ScheduleDetailsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Calendario
-            ScheduleCalendarCard()
+            // Calendario. Por ahora maneja el estado localmente; después el ViewModel podrá recibirlo.
+            ScheduleCalendarCard(
+                visibleMonth = visibleMonth,
+                selectedDate = selectedDate,
+                onPreviousMonthClick = {
+                    visibleMonth = visibleMonth.minusMonths(1)
+                },
+                onNextMonthClick = {
+                    visibleMonth = visibleMonth.plusMonths(1)
+                },
+                onDateSelected = { date ->
+                    selectedDate = date
+                }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -291,7 +313,7 @@ fun ScheduleDetailsScreenPreview() {
     MediCitasTheme {
         ScheduleDetailsScreen(
             onBack = {},
-            onConfirm = {}
+            onConfirm = { _, _, _ -> }
         )
     }
 }

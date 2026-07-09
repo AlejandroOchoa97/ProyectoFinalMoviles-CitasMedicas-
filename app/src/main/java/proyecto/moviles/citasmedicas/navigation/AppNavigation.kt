@@ -90,7 +90,9 @@ fun AppNavigation(startDestination: String = Routes.SPLASH) {
         )
         Routes.SCHEDULE_DETAILS -> ScheduleDetailsScreen(
             onBack = { currentRoute = Routes.SEARCH_DOCTOR },
-            onConfirm = { currentRoute = Routes.PATIENT_HOME }
+            onConfirm = { _, _, _ ->
+                currentRoute = Routes.PATIENT_HOME
+            }
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
