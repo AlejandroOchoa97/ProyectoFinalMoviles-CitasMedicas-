@@ -7,6 +7,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.screens.auth.LoginScreen
 import proyecto.moviles.citasmedicas.ui.screens.auth.RegisterScreen
 import proyecto.moviles.citasmedicas.ui.screens.auth.RecoverPasswordScreen
@@ -29,7 +30,8 @@ import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 @Composable
 fun AppNavigation(
     startDestination: String = Routes.SPLASH,
-    appointmentRepository: AppointmentRepository? = null
+    appointmentRepository: AppointmentRepository? = null,
+    patientRepository: PatientRepository? = null
 ) {
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
@@ -121,7 +123,10 @@ fun AppNavigation(
                 selectedAppointmentId = id
                 currentRoute = Routes.DOCTOR_APPOINTMENT_DETAIL
             },
-            onNavigateToAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY }
+            onNavigateToAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
+            appointmentRepository = appointmentRepository,
+            patientRepository = patientRepository,
+            doctorId = 1
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
