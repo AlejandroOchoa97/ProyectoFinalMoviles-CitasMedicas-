@@ -28,10 +28,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -48,9 +45,9 @@ import proyecto.moviles.citasmedicas.ui.theme.OutlineGray
 import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import proyecto.moviles.citasmedicas.ui.viewmodel.ScheduleAppointmentViewModel
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.YearMonth
 
 @Composable
 fun ScheduleDetailsScreen(
@@ -58,27 +55,11 @@ fun ScheduleDetailsScreen(
     onConfirm: (LocalDate, LocalTime, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Guarda la fecha seleccionada en el calendario.
-    var selectedDate by remember { mutableStateOf(LocalDate.of(2024, 10, 13)) }
+    // ViewModel temporal de la pantalla. Después se podrá inyectar desde navegación.
+    val viewModel = remember { ScheduleAppointmentViewModel() }
 
-    // Guarda el mes visible del calendario para permitir avanzar o regresar meses.
-    var visibleMonth by remember { mutableStateOf(YearMonth.from(selectedDate)) }
-
-    // Guarda el horario seleccionado.
-    var selectedTime by remember { mutableStateOf(LocalTime.of(11, 30)) }
-
-    // Guarda el motivo de la consulta.
-    var reason by remember { mutableStateOf("") }
-
-    // Lista de horarios disponibles.
-    val availableTimes = listOf(
-        LocalTime.of(9, 0),
-        LocalTime.of(10, 0),
-        LocalTime.of(11, 30),
-        LocalTime.of(14, 0),
-        LocalTime.of(15, 30),
-        LocalTime.of(17, 0),
-    )
+    // Estado actual que usa la interfaz.
+    val uiState = viewModel.uiState
 
     /**
      * Esta es la estructura base de la pantalla.
@@ -115,7 +96,12 @@ fun ScheduleDetailsScreen(
                 AppButton(
                     text = "Confirmar",
                     onClick = {
-                        onConfirm(selectedDate, selectedTime, reason)
+                        val confirmedState = viewModel.confirmAppointment()
+                        onConfirm(
+                            confirmedState.selectedDate,
+                            confirmedState.selectedTime,
+                            confirmedState.reason
+                        )
                     }
                 )
             }
@@ -159,17 +145,11 @@ fun ScheduleDetailsScreen(
 
             // Calendario. Por ahora maneja el estado localmente; después el ViewModel podrá recibirlo.
             ScheduleCalendarCard(
-                visibleMonth = visibleMonth,
-                selectedDate = selectedDate,
-                onPreviousMonthClick = {
-                    visibleMonth = visibleMonth.minusMonths(1)
-                },
-                onNextMonthClick = {
-                    visibleMonth = visibleMonth.plusMonths(1)
-                },
-                onDateSelected = { date ->
-                    selectedDate = date
-                }
+                visibleMonth = uiState.visibleMonth,
+                selectedDate = uiState.selectedDate,
+                onPreviousMonthClick = viewModel::showPreviousMonth,
+                onNextMonthClick = viewModel::showNextMonth,
+                onDateSelected = viewModel::selectDate
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -190,7 +170,7 @@ fun ScheduleDetailsScreen(
             ) {
 
                 // Esto divide la lista de horarios en grupos de 3
-                availableTimes.chunked(3).forEach { rowTimes ->
+                uiState.availableTimes.chunked(3).forEach { rowTimes ->
 
                     // Cada row es una fila de horarios
                     Row(
@@ -204,12 +184,10 @@ fun ScheduleDetailsScreen(
                                 time = time,
 
                                 // Se marca como seleccionado si coincide con selectedTime
-                                selected = selectedTime == time,
+                                selected = uiState.selectedTime == time,
 
                                 // Al presionar un horario se actualiza el seleccionado
-                                onClick = {
-                                    selectedTime = time
-                                },
+                                onClick = viewModel::selectTime,
 
                                 // Hace que los botones tengan el mismo ancho.
                                 modifier = Modifier.weight(1f)
@@ -223,10 +201,8 @@ fun ScheduleDetailsScreen(
 
             // Campo de texto para escribir el motivo de la consulta.
             OutlinedTextField(
-                value = reason,
-                onValueChange = {
-                    reason = it
-                },
+                value = uiState.reason,
+                onValueChange = viewModel::updateReason,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp),
