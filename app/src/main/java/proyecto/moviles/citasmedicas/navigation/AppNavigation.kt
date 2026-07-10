@@ -110,6 +110,7 @@ fun AppNavigation(
                 currentRoute = Routes.PATIENT_HOME
             },
             appointmentRepository = appointmentRepository,
+            doctorAvailabilityRepository = doctorAvailabilityRepository,
             patientId = 1,
             doctorId = selectedDoctorId
         )
