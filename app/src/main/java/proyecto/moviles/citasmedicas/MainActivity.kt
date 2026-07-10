@@ -33,10 +33,10 @@ class MainActivity : ComponentActivity() {
                     appointmentRepository = appContainer.appointmentRepository,
                     patientRepository = appContainer.patientRepository,
                     doctorRepository = appContainer.doctorRepository,
-                    doctorAvailabilityRepository = appContainer.doctorAvailabilityRepository
+                    doctorAvailabilityRepository = appContainer.doctorAvailabilityRepository,
+                    authRepository = appContainer.authRepository
                 )
             }
         }
     }
 }
-

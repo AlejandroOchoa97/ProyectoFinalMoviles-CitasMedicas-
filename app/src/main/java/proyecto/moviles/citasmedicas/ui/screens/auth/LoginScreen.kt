@@ -42,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
 import proyecto.moviles.citasmedicas.ui.components.AppButtonStyle
 import proyecto.moviles.citasmedicas.ui.components.AppLogoIcon
@@ -58,16 +59,37 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     onLoginSuccess: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
-    onForgotPasswordClick: () -> Unit = {}
+    onForgotPasswordClick: () -> Unit = {},
+    authRepository: AuthRepository? = null
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    fun showMessage(message: String) {
-        scope.launch { snackbarHostState.showSnackbar(message) }
+    fun handleLogin() {
+        if (email.isBlank() || password.isBlank()) {
+            scope.launch { snackbarHostState.showSnackbar("Por favor, completa todos los campos") }
+            return
+        }
+
+        if (authRepository == null) {
+            onLoginSuccess()
+            return
+        }
+
+        isLoading = true
+        scope.launch {
+            val result = authRepository.login(email, password)
+            isLoading = false
+            result.onSuccess {
+                onLoginSuccess()
+            }.onFailure { e ->
+                snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Credenciales inválidas"}")
+            }
+        }
     }
 
     Scaffold(
@@ -136,9 +158,10 @@ fun LoginScreen(
 
             Spacer(Modifier.height(8.dp))
             AppButton(
-                text = "Iniciar sesión",
+                text = if (isLoading) "Iniciando sesión..." else "Iniciar sesión",
                 icon = Icons.AutoMirrored.Outlined.ArrowForward,
-                onClick = onLoginSuccess
+                onClick = { handleLogin() },
+                enabled = !isLoading
             )
             Spacer(Modifier.height(14.dp))
             AppButton(
@@ -183,4 +206,3 @@ private fun LoginScreenPreview() {
         LoginScreen()
     }
 }
-

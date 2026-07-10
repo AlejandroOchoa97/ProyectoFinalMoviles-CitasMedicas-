@@ -7,6 +7,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
@@ -29,14 +30,15 @@ import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorProfileScreen
 import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 
-// Punto de entrada de navegación. Por ahora el único destino es el inicio de sesión.
+// Punto de entrada de navegación.
 @Composable
 fun AppNavigation(
     startDestination: String = Routes.SPLASH,
     appointmentRepository: AppointmentRepository? = null,
     patientRepository: PatientRepository? = null,
     doctorRepository: DoctorRepository? = null,
-    doctorAvailabilityRepository: DoctorAvailabilityRepository? = null
+    doctorAvailabilityRepository: DoctorAvailabilityRepository? = null,
+    authRepository: AuthRepository? = null
 ) {
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
@@ -63,18 +65,19 @@ fun AppNavigation(
         )
         Routes.LOGIN -> LoginScreen(
             onLoginSuccess = { 
-                // Simulamos que el primer usuario es un doctor para mostrar la nueva pantalla
                 currentRoute = Routes.DOCTOR_HOME 
             },
             onRegisterClick = { currentRoute = Routes.REGISTER },
-            onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD }
+            onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
+            authRepository = authRepository
         )
         Routes.RECOVER_PASSWORD -> RecoverPasswordScreen(
             onBack = { currentRoute = Routes.LOGIN }
         )
         Routes.REGISTER -> RegisterScreen(
             onBack = { currentRoute = Routes.LOGIN },
-            onRegistrationComplete = { currentRoute = Routes.LOGIN }
+            onRegistrationComplete = { currentRoute = Routes.LOGIN },
+            authRepository = authRepository
         )
         Routes.PATIENT_HOME -> PatientHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -84,19 +87,14 @@ fun AppNavigation(
             onAppointmentDetails = { id ->
                 selectedAppointmentId = id
                 currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
-            },
-            appointmentRepository = appointmentRepository,
-            doctorRepository = doctorRepository,
-            patientId = 1
+            }
         )
         Routes.PATIENT_APPOINTMENT_DETAIL -> PatientAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
-            appointmentRepository = appointmentRepository,
-            doctorRepository = doctorRepository
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
         )
         Routes.SEARCH_DOCTOR -> SearchDoctorScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
@@ -115,28 +113,18 @@ fun AppNavigation(
                 currentRoute = Routes.PATIENT_HOME
             },
             appointmentRepository = appointmentRepository,
-            doctorAvailabilityRepository = doctorAvailabilityRepository,
             patientId = 1,
             doctorId = selectedDoctorId
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
-            onAppointmentDetails = { id ->
-                selectedAppointmentId = id
-                currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
-            },
-            appointmentRepository = appointmentRepository,
-            doctorRepository = doctorRepository,
-            patientId = 1
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
         )
         Routes.USER_PROFILE -> UserProfileScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onLogout = { currentRoute = Routes.LOGIN },
-            patientRepository = patientRepository,
-            patientId = 1
+            onLogout = { currentRoute = Routes.LOGIN }
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -175,7 +163,8 @@ fun AppNavigation(
         else -> LoginScreen(
             onLoginSuccess = { currentRoute = Routes.PATIENT_HOME },
             onRegisterClick = { currentRoute = Routes.REGISTER },
-            onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD }
+            onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
+            authRepository = authRepository
         )
     }
 }
@@ -193,4 +182,3 @@ private fun AppNavigationPreview() {
         AppNavigation()
     }
 }
-

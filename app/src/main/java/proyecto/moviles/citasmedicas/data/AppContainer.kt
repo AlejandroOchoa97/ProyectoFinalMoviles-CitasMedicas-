@@ -3,6 +3,7 @@ package proyecto.moviles.citasmedicas.data
 import android.content.Context
 import proyecto.moviles.citasmedicas.data.local.database.DatabaseProvider
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
+import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
@@ -73,5 +74,12 @@ class AppContainer(
         DoctorAvailabilityRepository(
             doctorAvailabilityDAO = database.doctorAvailabilityDAO()
         )
+    }
+
+    /**
+     * Repositorio de autenticación (Firebase).
+     */
+    val authRepository: AuthRepository by lazy {
+        AuthRepository()
     }
 }

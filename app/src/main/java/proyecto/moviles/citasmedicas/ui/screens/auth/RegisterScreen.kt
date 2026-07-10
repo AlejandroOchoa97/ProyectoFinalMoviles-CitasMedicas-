@@ -1,6 +1,6 @@
 package proyecto.moviles.citasmedicas.ui.screens.auth
 
-/* Registro simulado: captura rol y datos localmente; aún no envía información a un backend. */
+/* Registro: captura datos y los envía a Firebase. Incluye selección de género con dropdown. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -19,23 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +29,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
@@ -54,8 +41,14 @@ import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(onBack: () -> Unit, onRegistrationComplete: () -> Unit, modifier: Modifier = Modifier) {
+fun RegisterScreen(
+    onBack: () -> Unit,
+    onRegistrationComplete: () -> Unit,
+    modifier: Modifier = Modifier,
+    authRepository: AuthRepository? = null
+) {
     var role by remember { mutableStateOf("Paciente") }
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -64,8 +57,41 @@ fun RegisterScreen(onBack: () -> Unit, onRegistrationComplete: () -> Unit, modif
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
+    
+    var expanded by remember { mutableStateOf(false) }
+    val genderOptions = listOf("Masculino", "Femenino", "Otro")
+    
+    var isLoading by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    fun handleRegister() {
+        if (email.isBlank() || password.isBlank() || fullName.isBlank()) {
+            scope.launch { snackbarHostState.showSnackbar("Por favor, completa los campos obligatorios") }
+            return
+        }
+        if (password != confirmation) {
+            scope.launch { snackbarHostState.showSnackbar("Las contraseñas no coinciden") }
+            return
+        }
+
+        if (authRepository == null) {
+            onRegistrationComplete()
+            return
+        }
+
+        isLoading = true
+        scope.launch {
+            val result = authRepository.register(email, password)
+            isLoading = false
+            result.onSuccess {
+                snackbarHostState.showSnackbar("Registro exitoso")
+                onRegistrationComplete()
+            }.onFailure { e ->
+                snackbarHostState.showSnackbar("Error: ${e.localizedMessage}")
+            }
+        }
+    }
 
     Scaffold(containerColor = AppBackground, snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
         Column(
@@ -92,18 +118,52 @@ fun RegisterScreen(onBack: () -> Unit, onRegistrationComplete: () -> Unit, modif
             RegisterField(email, { email = it }, "Correo electrónico")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 RegisterField(birthDate, { birthDate = it }, "Fecha nac.", Modifier.weight(1f))
-                RegisterField(gender, { gender = it }, "Género", Modifier.weight(1f))
+                
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = gender,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Género") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = AppWhite,
+                            unfocusedContainerColor = AppWhite,
+                            focusedBorderColor = PrimaryBlue,
+                            unfocusedBorderColor = BorderSoft
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        genderOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    gender = option
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
             RegisterField(phone, { phone = it }, "Teléfono")
             RegisterField(password, { password = it }, "Contraseña", visualPassword = true)
             RegisterField(confirmation, { confirmation = it }, "Confirmar contraseña", visualPassword = true)
             Spacer(Modifier.height(14.dp))
-            AppButton(text = "Registrarse", onClick = {
-                scope.launch {
-                    snackbarHostState.showSnackbar("Registro simulado correctamente")
-                    onRegistrationComplete()
-                }
-            })
+            AppButton(
+                text = if (isLoading) "Registrando..." else "Registrarse",
+                onClick = { handleRegister() },
+                enabled = !isLoading
+            )
             TextButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text("¿Ya tienes una cuenta? Inicia sesión", color = PrimaryBlue)
             }
@@ -118,7 +178,7 @@ private fun RoleButton(text: String, selected: Boolean, icon: androidx.compose.u
         modifier = modifier.height(64.dp),
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, if (selected) PrimaryBlue else BorderSoft),
-        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = if (selected) SecondaryBlue else AppWhite, contentColor = if (selected) PrimaryBlue else TextPrimary)
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = if (selected) SecondaryBlue else AppWhite, contentColor = if (selected) PrimaryBlue else TextPrimary)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, contentDescription = null)
