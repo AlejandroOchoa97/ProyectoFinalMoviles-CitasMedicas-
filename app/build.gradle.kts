@@ -16,7 +16,7 @@ android {
     }
 
     namespace = "proyecto.moviles.citasmedicas"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "proyecto.moviles.citasmedicas"
@@ -72,4 +72,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(platform("com.google.firebase:firebase-bom:34.15.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 }
