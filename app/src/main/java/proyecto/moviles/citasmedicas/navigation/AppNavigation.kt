@@ -1,10 +1,7 @@
 ﻿package proyecto.moviles.citasmedicas.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import proyecto.moviles.citasmedicas.data.repository.*
 import proyecto.moviles.citasmedicas.ui.screens.auth.*
@@ -14,6 +11,7 @@ import proyecto.moviles.citasmedicas.ui.screens.patient.*
 import proyecto.moviles.citasmedicas.ui.screens.doctor.*
 import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavigation(
@@ -27,9 +25,26 @@ fun AppNavigation(
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
     var selectedDoctorId by rememberSaveable { mutableStateOf(1) }
+    var localUserId by rememberSaveable { mutableStateOf(-1) }
+    
+    val scope = rememberCoroutineScope()
 
-    // Obtenemos el UID del usuario actual si existe
-    val currentUserId = authRepository?.currentUser?.uid
+    // Intentar recuperar el ID local si ya hay una sesión de Firebase activa
+    LaunchedEffect(Unit) {
+        val firebaseUid = authRepository?.currentUser?.uid
+        if (firebaseUid != null && localUserId == -1) {
+            val roleResult = authRepository.getUserRole(firebaseUid)
+            roleResult.onSuccess { role ->
+                if (role == "Médico") {
+                    val doctor = doctorRepository?.getDoctorByUid(firebaseUid)
+                    localUserId = doctor?.id ?: -1
+                } else {
+                    val patient = patientRepository?.getPatientByUid(firebaseUid)
+                    localUserId = patient?.id ?: -1
+                }
+            }
+        }
+    }
 
     when (currentRoute) {
         Routes.SPLASH -> SplashScreen(
@@ -52,7 +67,22 @@ fun AppNavigation(
         )
         Routes.LOGIN -> LoginScreen(
             onLoginSuccess = { role ->
-                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
+                scope.launch {
+                    val firebaseUid = authRepository?.currentUser?.uid
+                    if (firebaseUid != null) {
+                        if (role == "Médico") {
+                            val doctor = doctorRepository?.getDoctorByUid(firebaseUid)
+                            localUserId = doctor?.id ?: -1
+                            currentRoute = Routes.DOCTOR_HOME
+                        } else {
+                            val patient = patientRepository?.getPatientByUid(firebaseUid)
+                            localUserId = patient?.id ?: -1
+                            currentRoute = Routes.PATIENT_HOME
+                        }
+                    } else {
+                        currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
+                    }
+                }
             },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
@@ -64,7 +94,9 @@ fun AppNavigation(
         Routes.REGISTER -> RegisterScreen(
             onBack = { currentRoute = Routes.LOGIN },
             onRegistrationComplete = { currentRoute = Routes.LOGIN },
-            authRepository = authRepository
+            authRepository = authRepository,
+            patientRepository = patientRepository,
+            doctorRepository = doctorRepository
         )
         Routes.PATIENT_HOME -> PatientHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -74,14 +106,19 @@ fun AppNavigation(
             onAppointmentDetails = { id ->
                 selectedAppointmentId = id
                 currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
-            }
+            },
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository,
+            patientId = localUserId
         )
         Routes.PATIENT_APPOINTMENT_DETAIL -> PatientAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository
         )
         Routes.SEARCH_DOCTOR -> SearchDoctorScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
@@ -100,12 +137,20 @@ fun AppNavigation(
                 currentRoute = Routes.PATIENT_HOME
             },
             appointmentRepository = appointmentRepository,
-            patientId = 1, // Aquí se debería usar el ID real mapeado desde el UID de Firebase
+            doctorAvailabilityRepository = doctorAvailabilityRepository,
+            patientId = localUserId,
             doctorId = selectedDoctorId
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
+            onAppointmentDetails = { id ->
+                selectedAppointmentId = id
+                currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
+            },
+            appointmentRepository = appointmentRepository,
+            doctorRepository = doctorRepository,
+            patientId = localUserId
         )
         Routes.USER_PROFILE -> UserProfileScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
@@ -113,8 +158,11 @@ fun AppNavigation(
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
             onLogout = { 
                 authRepository?.logout()
+                localUserId = -1
                 currentRoute = Routes.LOGIN 
-            }
+            },
+            patientRepository = patientRepository,
+            patientId = localUserId
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -127,7 +175,7 @@ fun AppNavigation(
             appointmentRepository = appointmentRepository,
             patientRepository = patientRepository,
             doctorRepository = doctorRepository,
-            doctorId = 1 // Aquí se debería usar el ID real mapeado desde el UID de Firebase
+            doctorId = localUserId
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
@@ -140,7 +188,7 @@ fun AppNavigation(
             onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
             onNavigateToHome = { currentRoute = Routes.DOCTOR_HOME },
             availabilityRepository = doctorAvailabilityRepository,
-            doctorId = 1 // Aquí se debería usar el ID real mapeado desde el UID de Firebase
+            doctorId = localUserId
         )
         Routes.DOCTOR_PROFILE -> DoctorProfileScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },
@@ -148,10 +196,11 @@ fun AppNavigation(
             onNavigateAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
             onLogout = { 
                 authRepository?.logout()
+                localUserId = -1
                 currentRoute = Routes.LOGIN 
             },
             doctorRepository = doctorRepository,
-            doctorId = 1 // Aquí se debería usar el ID real mapeado desde el UID de Firebase
+            doctorId = localUserId
         )
         else -> LoginScreen(
             onLoginSuccess = { role ->

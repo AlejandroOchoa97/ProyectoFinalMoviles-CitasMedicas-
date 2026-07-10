@@ -18,7 +18,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
+import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
+import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
 import proyecto.moviles.citasmedicas.ui.theme.*
 
@@ -28,7 +32,9 @@ fun RegisterScreen(
     onBack: () -> Unit,
     onRegistrationComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    authRepository: AuthRepository? = null
+    authRepository: AuthRepository? = null,
+    patientRepository: PatientRepository? = null,
+    doctorRepository: DoctorRepository? = null
 ) {
     var role by remember { mutableStateOf("Paciente") }
     var fullName by remember { mutableStateOf("") }
@@ -64,11 +70,42 @@ fun RegisterScreen(
         isLoading = true
         scope.launch {
             val result = authRepository.register(email, password, role, fullName)
-            isLoading = false
-            result.onSuccess {
+            result.onSuccess { user ->
+                if (user != null) {
+                    // Guardar en la base de datos local
+                    if (role == "Paciente") {
+                        patientRepository?.insertPatient(
+                            PatientEntity(
+                                name = fullName,
+                                email = email,
+                                password = password,
+                                phone = phone,
+                                birthDate = birthDate,
+                                firebaseUid = user.uid
+                            )
+                        )
+                    } else {
+                        doctorRepository?.insertDoctor(
+                            DoctorEntity(
+                                name = fullName,
+                                email = email,
+                                password = password,
+                                specialty = "General", // Default
+                                professionalLicense = "TEMP-123",
+                                experienceYears = 0,
+                                clinicName = "Clínica MediCitas",
+                                clinicAddress = "Dirección pendiente",
+                                consultationPrice = 50.0,
+                                firebaseUid = user.uid
+                            )
+                        )
+                    }
+                }
+                isLoading = false
                 snackbarHostState.showSnackbar("Registro exitoso")
                 onRegistrationComplete()
             }.onFailure { e ->
+                isLoading = false
                 snackbarHostState.showSnackbar("Error: ${e.localizedMessage}")
             }
         }

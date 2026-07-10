@@ -31,6 +31,10 @@ class PatientRepository(
         return patientDAO.getPatientByEmail(email)
     }
 
+    suspend fun getPatientByUid(uid: String): PatientEntity? {
+        return patientDAO.getPatientByUid(uid)
+    }
+
     suspend fun loginPatient(
         email: String,
         password: String

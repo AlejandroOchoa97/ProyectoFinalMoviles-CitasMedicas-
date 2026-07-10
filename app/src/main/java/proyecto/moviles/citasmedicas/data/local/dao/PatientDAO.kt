@@ -50,6 +50,12 @@ interface PatientDAO {
     suspend fun getPatientByEmail(email: String): PatientEntity?
 
     /**
+     * Busca un paciente por su Firebase UID.
+     */
+    @Query("SELECT * FROM patients WHERE firebaseUid = :uid LIMIT 1")
+    suspend fun getPatientByUid(uid: String): PatientEntity?
+
+    /**
      * Valida el inicio de sesión del paciente.
      */
     @Query("SELECT * FROM patients WHERE emailPatient = :email AND passwordPatient = :password LIMIT 1")

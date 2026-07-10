@@ -53,6 +53,12 @@ interface DoctorDAO {
     suspend fun getDoctorByEmail(email: String): DoctorEntity?
 
     /**
+     * Busca un médico por su Firebase UID.
+     */
+    @Query("SELECT * FROM doctors WHERE firebaseUid = :uid LIMIT 1")
+    suspend fun getDoctorByUid(uid: String): DoctorEntity?
+
+    /**
      * Valida el inicio de sesión del médico.
      */
     @Query("SELECT * FROM doctors WHERE emailDoctor = :email AND passwordDoctor = :password LIMIT 1")

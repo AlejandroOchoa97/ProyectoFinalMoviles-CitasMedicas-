@@ -8,7 +8,8 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "doctors",
     indices = [
-        Index(value = ["emailDoctor"], unique = true)
+        Index(value = ["emailDoctor"], unique = true),
+        Index(value = ["firebaseUid"], unique = true)
     ]
 )
 data class DoctorEntity(
@@ -54,6 +55,7 @@ data class DoctorEntity(
 
     @ColumnInfo(name = "consultationPrice")
     val consultationPrice: Double,
-    //val rating: Double = 0.0,
-    //val imageUrl: String = ""
+
+    @ColumnInfo(name = "firebaseUid")
+    val firebaseUid: String? = null
 )

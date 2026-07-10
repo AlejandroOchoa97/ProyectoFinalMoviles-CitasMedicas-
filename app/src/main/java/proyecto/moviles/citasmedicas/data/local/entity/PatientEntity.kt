@@ -15,7 +15,8 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "patients",
     indices = [
-        Index(value = ["emailPatient"], unique = true)
+        Index(value = ["emailPatient"], unique = true),
+        Index(value = ["firebaseUid"], unique = true)
     ]
 )
 data class PatientEntity(
@@ -36,5 +37,8 @@ data class PatientEntity(
     val phone: String,
 
     @ColumnInfo(name = "birthDatePatient")
-    val birthDate: String = ""
+    val birthDate: String = "",
+
+    @ColumnInfo(name = "firebaseUid")
+    val firebaseUid: String? = null
 )
