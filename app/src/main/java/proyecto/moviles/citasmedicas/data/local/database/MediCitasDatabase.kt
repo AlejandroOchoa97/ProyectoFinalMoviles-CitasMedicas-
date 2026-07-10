@@ -19,7 +19,7 @@ import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
         AppointmentEntity::class,
         DoctorAvailabilityEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class MediCitasDatabase : RoomDatabase() {

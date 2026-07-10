@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import proyecto.moviles.citasmedicas.model.AppointmentStatus
 
 /**
  * AppointmentEntity
@@ -89,9 +90,10 @@ data class AppointmentEntity(
      * - "CONFIRMED"
      * - "COMPLETED"
      * - "CANCELLED"
+     * - "URGENT"
      */
     @ColumnInfo(name = "status")
-    val status: String = "PENDING",
+    val status: String = AppointmentStatus.PENDING,
 
     /**
      * Fecha en la que se creó la cita.

@@ -8,6 +8,7 @@ import proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity
 import proyecto.moviles.citasmedicas.data.local.entity.DoctorAvailabilityEntity
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
+import proyecto.moviles.citasmedicas.model.AppointmentStatus
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -183,7 +184,7 @@ class ScheduleAppointmentViewModel(
                     date = uiState.selectedDate.toString(),
                     time = selectedTime.format(timeFormatter),
                     reason = cleanReason,
-                    status = "PENDING",
+                    status = AppointmentStatus.PENDING,
                     createdAt = LocalDate.now().toString()
                 )
             )

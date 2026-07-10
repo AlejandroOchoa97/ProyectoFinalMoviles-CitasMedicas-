@@ -8,6 +8,7 @@ import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
+import proyecto.moviles.citasmedicas.model.AppointmentStatus
 
 /**
  * Inserta datos iniciales para poder probar la app con Room.
@@ -74,6 +75,9 @@ class LocalDataSeeder(
 
     /**
      * Inserta médicos demo si todavía no existe ninguno.
+     *
+     * Las coordenadas son simuladas y quedan listas para reemplazarse
+     * por coordenadas reales de cada clínica.
      */
     private suspend fun seedDoctorsIfNeeded() {
         if (doctorRepository.getAllDoctors().isNotEmpty()) return
@@ -89,6 +93,8 @@ class LocalDataSeeder(
                     experienceYears = 10,
                     clinicName = "Torre Médica Metropolitan",
                     clinicAddress = "Av. Insurgentes Sur 1582, CDMX",
+                    clinicLatitude = 19.3763,
+                    clinicLongitude = -99.1770,
                     consultationPrice = 800.0
                 ),
                 DoctorEntity(
@@ -100,6 +106,8 @@ class LocalDataSeeder(
                     experienceYears = 15,
                     clinicName = "Clínica Infantil Reforma",
                     clinicAddress = "Paseo de la Reforma 250, CDMX",
+                    clinicLatitude = 19.4285,
+                    clinicLongitude = -99.1647,
                     consultationPrice = 950.0
                 ),
                 DoctorEntity(
@@ -111,6 +119,8 @@ class LocalDataSeeder(
                     experienceYears = 8,
                     clinicName = "Dermacenter Roma",
                     clinicAddress = "Calle Durango 120, CDMX",
+                    clinicLatitude = 19.4194,
+                    clinicLongitude = -99.1688,
                     consultationPrice = 1100.0
                 ),
                 DoctorEntity(
@@ -122,6 +132,8 @@ class LocalDataSeeder(
                     experienceYears = 22,
                     clinicName = "Consultorio Médico Central",
                     clinicAddress = "Av. Universidad 300, CDMX",
+                    clinicLatitude = 19.3635,
+                    clinicLongitude = -99.1657,
                     consultationPrice = 600.0
                 )
             )
@@ -156,7 +168,7 @@ class LocalDataSeeder(
                 date = "2024-10-24",
                 time = "09:00",
                 reason = "Chequeo general y revisión de presión arterial.",
-                status = "CONFIRMED",
+                status = AppointmentStatus.CONFIRMED,
                 createdAt = "2024-10-01"
             ),
             AppointmentEntity(
@@ -165,7 +177,7 @@ class LocalDataSeeder(
                 date = "2024-10-24",
                 time = "10:30",
                 reason = "Control de hipertensión y seguimiento de tratamiento.",
-                status = "CONFIRMED",
+                status = AppointmentStatus.CONFIRMED,
                 createdAt = "2024-10-02"
             ),
             AppointmentEntity(
@@ -174,7 +186,7 @@ class LocalDataSeeder(
                 date = "2024-10-24",
                 time = "12:00",
                 reason = "Dolor abdominal agudo reportado durante la mañana.",
-                status = "URGENT",
+                status = AppointmentStatus.URGENT,
                 createdAt = "2024-10-03"
             ),
             AppointmentEntity(
@@ -183,7 +195,7 @@ class LocalDataSeeder(
                 date = "2024-10-18",
                 time = "16:45",
                 reason = "Consulta de revisión pediátrica.",
-                status = "CONFIRMED",
+                status = AppointmentStatus.CONFIRMED,
                 createdAt = "2024-10-02"
             ),
             AppointmentEntity(
@@ -192,7 +204,7 @@ class LocalDataSeeder(
                 date = "2024-10-22",
                 time = "09:00",
                 reason = "Revisión de irritación en la piel.",
-                status = "PENDING",
+                status = AppointmentStatus.PENDING,
                 createdAt = "2024-10-03"
             )
         ).forEach { appointment ->

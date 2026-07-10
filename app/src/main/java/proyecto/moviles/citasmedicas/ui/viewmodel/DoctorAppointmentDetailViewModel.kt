@@ -9,6 +9,7 @@ import proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity
 import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
+import proyecto.moviles.citasmedicas.model.AppointmentStatus
 import proyecto.moviles.citasmedicas.model.DoctorAppointment
 import java.time.LocalDate
 import java.time.LocalTime
@@ -76,7 +77,7 @@ class DoctorAppointmentDetailViewModel(
     private fun AppointmentEntity.toDoctorAppointment(patient: PatientEntity?): DoctorAppointment {
         val appointmentDate = runCatching { LocalDate.parse(date) }.getOrDefault(LocalDate.now())
         val appointmentTime = runCatching { LocalTime.parse(time) }.getOrDefault(LocalTime.of(9, 0))
-        val isUrgentAppointment = status.equals("URGENT", ignoreCase = true)
+        val isUrgentAppointment = AppointmentStatus.isUrgent(status)
 
         return DoctorAppointment(
             id = id,
@@ -89,7 +90,7 @@ class DoctorAppointmentDetailViewModel(
             reason = reason,
             detailedReason = reason,
             specialty = "Consulta médica",
-            status = status.toDisplayStatus(),
+            status = AppointmentStatus.toDisplayName(status),
             isUrgent = isUrgentAppointment,
             hasNotification = isUrgentAppointment
         )
@@ -101,14 +102,4 @@ class DoctorAppointmentDetailViewModel(
         }.getOrDefault(0)
     }
 
-    private fun String.toDisplayStatus(): String {
-        return when (uppercase()) {
-            "CONFIRMED" -> "Confirmada"
-            "PENDING" -> "Pendiente"
-            "COMPLETED" -> "Completada"
-            "CANCELLED" -> "Cancelada"
-            "URGENT" -> "Urgente"
-            else -> this
-        }
-    }
 }
