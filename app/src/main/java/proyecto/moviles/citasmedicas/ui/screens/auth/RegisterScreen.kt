@@ -1,17 +1,7 @@
 package proyecto.moviles.citasmedicas.ui.screens.auth
 
-/* Registro: captura datos y los envía a Firebase. Incluye selección de género con dropdown. */
-
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,7 +10,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,15 +20,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
-import proyecto.moviles.citasmedicas.ui.theme.AppBackground
-import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
-import proyecto.moviles.citasmedicas.ui.theme.AppWhite
-import proyecto.moviles.citasmedicas.ui.theme.BorderSoft
-import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
-import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
-import proyecto.moviles.citasmedicas.ui.theme.SecondaryBlue
-import proyecto.moviles.citasmedicas.ui.theme.TextPrimary
-import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
+import proyecto.moviles.citasmedicas.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +63,7 @@ fun RegisterScreen(
 
         isLoading = true
         scope.launch {
-            val result = authRepository.register(email, password)
+            val result = authRepository.register(email, password, role, fullName)
             isLoading = false
             result.onSuccess {
                 snackbarHostState.showSnackbar("Registro exitoso")

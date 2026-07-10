@@ -16,12 +16,12 @@ android {
     }
 
     namespace = "proyecto.moviles.citasmedicas"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "proyecto.moviles.citasmedicas"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -72,4 +72,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(platform("com.google.firebase:firebase-bom:34.15.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 }

@@ -1,37 +1,13 @@
 package proyecto.moviles.citasmedicas.ui.screens.auth
 
-/* Login visual: mantiene campos en memoria y delega navegación mediante callbacks. */
-
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -57,7 +33,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit = {},
+    onLoginSuccess: (String) -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     authRepository: AuthRepository? = null
@@ -76,17 +52,28 @@ fun LoginScreen(
         }
 
         if (authRepository == null) {
-            onLoginSuccess()
+            onLoginSuccess("Paciente")
             return
         }
 
         isLoading = true
         scope.launch {
             val result = authRepository.login(email, password)
-            isLoading = false
-            result.onSuccess {
-                onLoginSuccess()
+            result.onSuccess { user ->
+                if (user != null) {
+                    val roleResult = authRepository.getUserRole(user.uid)
+                    isLoading = false
+                    roleResult.onSuccess { role ->
+                        onLoginSuccess(role ?: "Paciente")
+                    }.onFailure {
+                        onLoginSuccess("Paciente")
+                    }
+                } else {
+                    isLoading = false
+                    snackbarHostState.showSnackbar("Error al obtener el usuario")
+                }
             }.onFailure { e ->
+                isLoading = false
                 snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Credenciales inválidas"}")
             }
         }

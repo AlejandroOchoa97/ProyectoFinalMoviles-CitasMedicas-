@@ -6,31 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
-import proyecto.moviles.citasmedicas.data.repository.AuthRepository
-import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
-import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
-import proyecto.moviles.citasmedicas.data.repository.PatientRepository
-import proyecto.moviles.citasmedicas.ui.screens.auth.LoginScreen
-import proyecto.moviles.citasmedicas.ui.screens.auth.RegisterScreen
-import proyecto.moviles.citasmedicas.ui.screens.auth.RecoverPasswordScreen
-import proyecto.moviles.citasmedicas.ui.screens.onboarding.OnboardingScreen
-import proyecto.moviles.citasmedicas.ui.screens.onboarding.onboardingPages
+import proyecto.moviles.citasmedicas.data.repository.*
+import proyecto.moviles.citasmedicas.ui.screens.auth.*
+import proyecto.moviles.citasmedicas.ui.screens.onboarding.*
 import proyecto.moviles.citasmedicas.ui.screens.splash.SplashScreen
-import proyecto.moviles.citasmedicas.ui.screens.patient.PatientHomeScreen
-import proyecto.moviles.citasmedicas.ui.screens.patient.SearchDoctorScreen
-import proyecto.moviles.citasmedicas.ui.screens.patient.PatientAppointmentDetailScreen
-import proyecto.moviles.citasmedicas.ui.screens.patient.ScheduleDetailsScreen
-import proyecto.moviles.citasmedicas.ui.screens.patient.AppointmentHistoryScreen
-import proyecto.moviles.citasmedicas.ui.screens.patient.UserProfileScreen
-import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorHomeScreen
-import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorAppointmentDetailScreen
-import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorAvailabilityScreen
-import proyecto.moviles.citasmedicas.ui.screens.doctor.DoctorProfileScreen
+import proyecto.moviles.citasmedicas.ui.screens.patient.*
+import proyecto.moviles.citasmedicas.ui.screens.doctor.*
 import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 
-// Punto de entrada de navegación.
 @Composable
 fun AppNavigation(
     startDestination: String = Routes.SPLASH,
@@ -43,6 +27,9 @@ fun AppNavigation(
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
     var selectedDoctorId by rememberSaveable { mutableStateOf(1) }
+
+    // Obtenemos el UID del usuario actual si existe
+    val currentUserId = authRepository?.currentUser?.uid
 
     when (currentRoute) {
         Routes.SPLASH -> SplashScreen(
@@ -64,8 +51,8 @@ fun AppNavigation(
             onSkip = { currentRoute = Routes.LOGIN }
         )
         Routes.LOGIN -> LoginScreen(
-            onLoginSuccess = { 
-                currentRoute = Routes.DOCTOR_HOME 
+            onLoginSuccess = { role ->
+                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
             },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
@@ -113,7 +100,7 @@ fun AppNavigation(
                 currentRoute = Routes.PATIENT_HOME
             },
             appointmentRepository = appointmentRepository,
-            patientId = 1,
+            patientId = 1, // Aquí se debería usar el ID real mapeado desde el UID de Firebase
             doctorId = selectedDoctorId
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
@@ -124,7 +111,10 @@ fun AppNavigation(
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onLogout = { currentRoute = Routes.LOGIN }
+            onLogout = { 
+                authRepository?.logout()
+                currentRoute = Routes.LOGIN 
+            }
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -137,7 +127,7 @@ fun AppNavigation(
             appointmentRepository = appointmentRepository,
             patientRepository = patientRepository,
             doctorRepository = doctorRepository,
-            doctorId = 1
+            doctorId = 1 // Aquí se debería usar el ID real mapeado desde el UID de Firebase
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
@@ -150,18 +140,23 @@ fun AppNavigation(
             onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
             onNavigateToHome = { currentRoute = Routes.DOCTOR_HOME },
             availabilityRepository = doctorAvailabilityRepository,
-            doctorId = 1
+            doctorId = 1 // Aquí se debería usar el ID real mapeado desde el UID de Firebase
         )
         Routes.DOCTOR_PROFILE -> DoctorProfileScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },
             onNavigateHome = { currentRoute = Routes.DOCTOR_HOME },
             onNavigateAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
-            onLogout = { currentRoute = Routes.LOGIN },
+            onLogout = { 
+                authRepository?.logout()
+                currentRoute = Routes.LOGIN 
+            },
             doctorRepository = doctorRepository,
-            doctorId = 1
+            doctorId = 1 // Aquí se debería usar el ID real mapeado desde el UID de Firebase
         )
         else -> LoginScreen(
-            onLoginSuccess = { currentRoute = Routes.PATIENT_HOME },
+            onLoginSuccess = { role ->
+                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
+            },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
             authRepository = authRepository
