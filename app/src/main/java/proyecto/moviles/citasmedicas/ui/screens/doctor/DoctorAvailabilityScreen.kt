@@ -1,6 +1,6 @@
 package proyecto.moviles.citasmedicas.ui.screens.doctor
 
-/* Disponibilidad médica: permite configurar horarios y guardarlos en Room. */
+/* Disponibilidad médica: configura bloques por día con TimePicker real y validación. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,12 +47,17 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +69,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
@@ -78,6 +86,13 @@ import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAvailabilityBlockUi
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAvailabilityViewModel
 
+private val AvailabilityTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+private data class TimeEditTarget(
+    val blockIndex: Int,
+    val isStartTime: Boolean
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorAvailabilityScreen(
@@ -89,19 +104,17 @@ fun DoctorAvailabilityScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var timeEditTarget by remember { mutableStateOf<TimeEditTarget?>(null) }
 
-    // ViewModel que carga y guarda la disponibilidad médica en Room.
     val viewModel = remember(availabilityRepository) {
         DoctorAvailabilityViewModel(availabilityRepository)
     }
     val uiState = viewModel.uiState
 
-    // Al abrir la pantalla se cargan los bloques guardados del médico activo.
     LaunchedEffect(doctorId) {
         viewModel.loadAvailability(doctorId)
     }
 
-    // Muestra mensajes de éxito o error producidos por el ViewModel.
     LaunchedEffect(uiState.message, uiState.errorMessage) {
         val message = uiState.message ?: uiState.errorMessage
         if (message != null) {
@@ -124,20 +137,12 @@ fun DoctorAvailabilityScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar",
-                            tint = TextPrimary
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Regresar", tint = TextPrimary)
                     }
                 },
                 actions = {
                     IconButton(onClick = onProfileClick) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Perfil",
-                            tint = PrimaryBlue
-                        )
+                        Icon(Icons.Default.Person, "Perfil", tint = PrimaryBlue)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppWhite)
@@ -170,7 +175,14 @@ fun DoctorAvailabilityScreen(
 
             CalendarStrip(
                 selectedDay = uiState.selectedDay,
-                onDaySelected = viewModel::selectDay
+                onDaySelected = { day ->
+                    scope.launch {
+                        viewModel.loadAvailabilityForDay(
+                            doctorId = doctorId,
+                            day = day
+                        )
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -195,13 +207,30 @@ fun DoctorAvailabilityScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            if (uiState.blocks.isEmpty()) {
+                Text(
+                    text = "No hay bloques para este día. Agrega uno para configurar disponibilidad.",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+            }
+
             uiState.blocks.forEachIndexed { index, block ->
                 ShiftBlock(
                     block = block,
                     icon = block.iconForTitle(),
                     isSelected = uiState.selectedBlockTitle == block.title,
                     onClick = { viewModel.selectBlock(block.title) },
-                    onDelete = { viewModel.deleteBlock(index) }
+                    onDelete = { viewModel.deleteBlock(index) },
+                    onStartClick = {
+                        viewModel.selectBlock(block.title)
+                        timeEditTarget = TimeEditTarget(index, true)
+                    },
+                    onEndClick = {
+                        viewModel.selectBlock(block.title)
+                        timeEditTarget = TimeEditTarget(index, false)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -243,9 +272,7 @@ fun DoctorAvailabilityScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        viewModel.saveAvailability(doctorId)
-                    }
+                    scope.launch { viewModel.saveAvailability(doctorId) }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -258,9 +285,27 @@ fun DoctorAvailabilityScreen(
                 Text("Guardar cambios", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
 
-            // Espacio extra para que el botón no quede oculto detrás del BottomNavigationBar
-            // ni de la barra de navegación del sistema en pantallas pequeñas.
             Spacer(modifier = Modifier.height(140.dp))
+        }
+    }
+
+    timeEditTarget?.let { target ->
+        val block = uiState.blocks.getOrNull(target.blockIndex)
+        if (block != null) {
+            AvailabilityTimePickerDialog(
+                initialTime = if (target.isStartTime) block.startTime else block.endTime,
+                onDismiss = { timeEditTarget = null },
+                onConfirm = { selectedTime ->
+                    if (target.isStartTime) {
+                        viewModel.updateStartTime(target.blockIndex, selectedTime)
+                    } else {
+                        viewModel.updateEndTime(target.blockIndex, selectedTime)
+                    }
+                    timeEditTarget = null
+                }
+            )
+        } else {
+            timeEditTarget = null
         }
     }
 }
@@ -365,7 +410,9 @@ private fun ShiftBlock(
     icon: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onStartClick: () -> Unit = {},
+    onEndClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
@@ -398,7 +445,13 @@ private fun ShiftBlock(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TimePickerField(label = "Inicio", time = block.startTime, modifier = Modifier.weight(1f))
+                TimePickerField(
+                    label = "Inicio",
+                    time = block.startTime,
+                    modifier = Modifier.weight(1f),
+                    isFocused = isSelected,
+                    onClick = onStartClick
+                )
 
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForward,
@@ -413,7 +466,8 @@ private fun ShiftBlock(
                     label = "Fin",
                     time = block.endTime,
                     modifier = Modifier.weight(1f),
-                    isFocused = isSelected
+                    isFocused = isSelected,
+                    onClick = onEndClick
                 )
             }
         }
@@ -425,12 +479,14 @@ private fun TimePickerField(
     label: String,
     time: String,
     modifier: Modifier = Modifier,
-    isFocused: Boolean = false
+    isFocused: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     Column(modifier = modifier) {
         Text(text = label, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
         Spacer(modifier = Modifier.height(4.dp))
         Surface(
+            modifier = Modifier.clickable(onClick = onClick),
             shape = RoundedCornerShape(8.dp),
             color = if (isFocused) AppWhite else BorderSoft.copy(alpha = 0.3f),
             border = BorderStroke(1.dp, if (isFocused) PrimaryBlue else Color.Transparent)
@@ -450,6 +506,51 @@ private fun TimePickerField(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AvailabilityTimePickerDialog(
+    initialTime: String,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalTime) -> Unit
+) {
+    val initialLocalTime = remember(initialTime) {
+        runCatching { LocalTime.parse(initialTime, AvailabilityTimeFormatter) }
+            .getOrDefault(LocalTime.of(8, 0))
+    }
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialLocalTime.hour,
+        initialMinute = initialLocalTime.minute,
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Seleccionar hora") },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        LocalTime.of(
+                            timePickerState.hour,
+                            timePickerState.minute
+                        )
+                    )
+                }
+            ) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 private fun DoctorAvailabilityBlockUi.iconForTitle(): ImageVector {
