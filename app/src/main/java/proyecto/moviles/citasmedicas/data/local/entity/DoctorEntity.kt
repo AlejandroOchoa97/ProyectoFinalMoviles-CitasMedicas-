@@ -40,6 +40,18 @@ data class DoctorEntity(
     @ColumnInfo(name = "clinicAddress")
     val clinicAddress: String,
 
+    /**
+     * Coordenadas opcionales de la clínica.
+     *
+     * Se dejan listas para mostrar la ubicación exacta en el mapa cuando
+     * el equipo confirme las coordenadas reales de cada consultorio.
+     */
+    @ColumnInfo(name = "clinicLatitude")
+    val clinicLatitude: Double? = null,
+
+    @ColumnInfo(name = "clinicLongitude")
+    val clinicLongitude: Double? = null,
+
     @ColumnInfo(name = "consultationPrice")
     val consultationPrice: Double,
     //val rating: Double = 0.0,
