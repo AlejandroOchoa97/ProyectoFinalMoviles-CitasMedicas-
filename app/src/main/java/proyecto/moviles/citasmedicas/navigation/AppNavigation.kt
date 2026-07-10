@@ -75,9 +75,29 @@ fun AppNavigation(
     }
 
     when (currentRoute) {
-        Routes.SPLASH -> SplashScreen(
-            onFinished = { currentRoute = Routes.ONBOARDING_1 }
-        )
+    Routes.SPLASH -> SplashScreen(
+        onFinished = {
+            scope.launch {
+                val user = authRepository?.currentUser
+                if (user != null && user.email != null) {
+                    val patient = patientRepository?.getPatientByEmail(user.email!!)
+                    if (patient != null) {
+                        authRepository.activePatient = patient
+                        currentRoute = Routes.PATIENT_HOME
+                        return@launch
+                    }
+
+                    val doctor = doctorRepository?.getDoctorByEmail(user.email!!)
+                    if (doctor != null) {
+                        authRepository.activeDoctor = doctor
+                        currentRoute = Routes.DOCTOR_HOME
+                        return@launch
+                    }
+                }
+                currentRoute = Routes.ONBOARDING_1
+            }
+        }
+    )
         Routes.ONBOARDING_1 -> OnboardingScreen(
             page = onboardingPages[0],
             onNext = { currentRoute = Routes.ONBOARDING_2 },
@@ -111,7 +131,9 @@ fun AppNavigation(
             onRegistrationComplete = { role ->
                 currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
             },
-            authRepository = authRepository
+            authRepository = authRepository,
+            patientRepository = patientRepository,
+            doctorRepository = doctorRepository
         )
         Routes.PATIENT_HOME -> PatientHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -124,7 +146,7 @@ fun AppNavigation(
             },
             appointmentRepository = appointmentRepository,
             doctorRepository = doctorRepository,
-            patientId = authRepository?.activePatient?.id ?: 1
+            patientId = authRepository?.activePatient?.id ?: -1
         )
         Routes.PATIENT_APPOINTMENT_DETAIL -> PatientAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
@@ -152,7 +174,7 @@ fun AppNavigation(
                 currentRoute = Routes.PATIENT_HOME
             },
             appointmentRepository = appointmentRepository,
-            patientId = authRepository?.activePatient?.id ?: 1,
+            patientId = authRepository?.activePatient?.id ?: -1,
             doctorId = selectedDoctorId
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
@@ -164,7 +186,7 @@ fun AppNavigation(
             },
             appointmentRepository = appointmentRepository,
             doctorRepository = doctorRepository,
-            patientId = authRepository?.activePatient?.id ?: 1
+            patientId = authRepository?.activePatient?.id ?: -1
         )
         Routes.USER_PROFILE -> UserProfileScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
@@ -175,7 +197,7 @@ fun AppNavigation(
                 currentRoute = Routes.LOGIN 
             },
             patientRepository = patientRepository,
-            patientId = authRepository?.activePatient?.id ?: 1
+            patientId = authRepository?.activePatient?.id ?: -1
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { 
@@ -191,14 +213,14 @@ fun AppNavigation(
             appointmentRepository = appointmentRepository,
             patientRepository = patientRepository,
             doctorRepository = doctorRepository,
-            doctorId = authRepository?.activeDoctor?.id ?: 1
+            doctorId = authRepository?.activeDoctor?.id ?: -1
         )
         Routes.DOCTOR_AVAILABILITY -> DoctorAvailabilityScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },
             onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
             onNavigateToHome = { currentRoute = Routes.DOCTOR_HOME },
             availabilityRepository = doctorAvailabilityRepository,
-            doctorId = authRepository?.activeDoctor?.id ?: 1
+            doctorId = authRepository?.activeDoctor?.id ?: -1
         )
         Routes.DOCTOR_PROFILE -> DoctorProfileScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },
@@ -209,7 +231,7 @@ fun AppNavigation(
                 currentRoute = Routes.LOGIN 
             },
             doctorRepository = doctorRepository,
-            doctorId = authRepository?.activeDoctor?.id ?: 1
+            doctorId = authRepository?.activeDoctor?.id ?: -1
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,

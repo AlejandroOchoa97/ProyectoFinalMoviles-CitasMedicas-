@@ -42,6 +42,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
+import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
@@ -100,7 +102,18 @@ fun LoginScreen(
                     authRepository.activeDoctor = doctor
                     onLoginSuccess("Médico")
                 } else {
-                    // Si no se encuentra en las tablas locales (podría pasar si solo está en Firebase)
+                    // Si el usuario existe en Firebase pero no en Room (pudo registrarse en otro dispositivo),
+                    // creamos un perfil básico de paciente para evitar que cargue datos de otros usuarios.
+                    val newPatient = PatientEntity(
+                        name = email.substringBefore("@"),
+                        email = email,
+                        password = password,
+                        phone = "Pendiente",
+                        birthDate = ""
+                    )
+                    patientRepository?.insertPatient(newPatient)
+                    val savedPatient = patientRepository?.getPatientByEmail(email)
+                    authRepository.activePatient = savedPatient
                     onLoginSuccess("Paciente")
                 }
             } else {

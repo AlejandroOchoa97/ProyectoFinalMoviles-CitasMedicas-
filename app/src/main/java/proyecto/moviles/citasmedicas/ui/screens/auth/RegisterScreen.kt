@@ -134,34 +134,40 @@ fun RegisterScreen(
                     snackbarHostState.showSnackbar("Registro exitoso")
                     // Firebase Auth solo guarda el acceso. Room guarda el perfil de MediCitas.
                     if (role == "Paciente") {
-                        patientRepository?.insertPatient(
-                            PatientEntity(
-                                name = fullName.trim(),
-                                email = cleanEmail,
-                                password = cleanPassword,
-                                phone = phone.trim(),
-                                birthDate = birthDate.trim()
-                            )
+                        val newPatient = PatientEntity(
+                            name = fullName.trim(),
+                            email = cleanEmail,
+                            password = cleanPassword,
+                            phone = phone.trim(),
+                            birthDate = birthDate.trim()
                         )
+                        patientRepository?.insertPatient(newPatient)
+                        
+                        // Recuperar el paciente con su ID generado para mantener la sesión activa
+                        val savedPatient = patientRepository?.getPatientByEmail(cleanEmail)
+                        authRepository.activePatient = savedPatient
                     } else {
-                        doctorRepository?.insertDoctor(
-                            DoctorEntity(
-                                name = fullName.trim(),
-                                email = cleanEmail,
-                                password = cleanPassword,
-                                specialty = "Medicina General",
-                                professionalLicense = "Pendiente",
-                                experienceYears = 0,
-                                clinicName = "Clínica pendiente",
-                                clinicAddress = "Dirección pendiente",
-                                consultationPrice = 800.0
-                            )
+                        val newDoctor = DoctorEntity(
+                            name = fullName.trim(),
+                            email = cleanEmail,
+                            password = cleanPassword,
+                            specialty = "Medicina General",
+                            professionalLicense = "Pendiente",
+                            experienceYears = 0,
+                            clinicName = "Clínica pendiente",
+                            clinicAddress = "Dirección pendiente",
+                            consultationPrice = 800.0
                         )
+                        doctorRepository?.insertDoctor(newDoctor)
+
+                        // Recuperar el médico con su ID generado para mantener la sesión activa
+                        val savedDoctor = doctorRepository?.getDoctorByEmail(cleanEmail)
+                        authRepository.activeDoctor = savedDoctor
                     }
 
                     // Al registrarse correctamente regresa de inmediato al Login.
                     // Si esperamos al Snackbar, la navegación tarda hasta que el mensaje desaparece.
-                    onRegistrationComplete()
+                    onRegistrationComplete(role)
                 }.onFailure { exception ->
                     snackbarHostState.showSnackbar(
                         "Error: ${exception.localizedMessage ?: "No se pudo registrar el usuario"}"
