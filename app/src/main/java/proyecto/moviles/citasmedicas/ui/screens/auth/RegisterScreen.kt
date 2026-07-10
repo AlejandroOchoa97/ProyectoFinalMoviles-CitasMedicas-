@@ -66,7 +66,7 @@ import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 @Composable
 fun RegisterScreen(
     onBack: () -> Unit,
-    onRegistrationComplete: () -> Unit,
+    onRegistrationComplete: (String) -> Unit,
     modifier: Modifier = Modifier,
     authRepository: AuthRepository? = null
 ) {
@@ -112,7 +112,7 @@ fun RegisterScreen(
         }
 
         if (authRepository == null) {
-            onRegistrationComplete()
+            onRegistrationComplete(role)
             return
         }
 
@@ -124,7 +124,8 @@ fun RegisterScreen(
 
                 result.onSuccess {
                     snackbarHostState.showSnackbar("Registro exitoso")
-                    onRegistrationComplete()
+                    // Opcional: Podrías buscar el objeto recién creado en la DB local y asignarlo a authRepository.activePatient/Doctor
+                    onRegistrationComplete(role)
                 }.onFailure { exception ->
                     snackbarHostState.showSnackbar(
                         "Error: ${exception.localizedMessage ?: "No se pudo registrar el usuario"}"

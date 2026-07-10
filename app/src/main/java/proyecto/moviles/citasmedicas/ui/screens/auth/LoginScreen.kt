@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
+import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
 import proyecto.moviles.citasmedicas.ui.components.AppButtonStyle
 import proyecto.moviles.citasmedicas.ui.components.AppLogoIcon
@@ -57,10 +59,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit = {},
+    onLoginSuccess: (String) -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
-    authRepository: AuthRepository? = null
+    authRepository: AuthRepository? = null,
+    patientRepository: PatientRepository? = null,
+    doctorRepository: DoctorRepository? = null
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -76,18 +80,33 @@ fun LoginScreen(
         }
 
         if (authRepository == null) {
-            onLoginSuccess()
+            onLoginSuccess("Paciente")
             return
         }
 
         isLoading = true
         scope.launch {
             val result = authRepository.login(email, password)
-            isLoading = false
-            result.onSuccess {
-                onLoginSuccess()
-            }.onFailure { e ->
-                snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Credenciales inválidas"}")
+            if (result.isSuccess) {
+                // Determinar el rol buscando en las tablas locales
+                val patient = patientRepository?.getPatientByEmail(email)
+                val doctor = if (patient == null) doctorRepository?.getDoctorByEmail(email) else null
+                
+                isLoading = false
+                if (patient != null) {
+                    authRepository.activePatient = patient
+                    onLoginSuccess("Paciente")
+                } else if (doctor != null) {
+                    authRepository.activeDoctor = doctor
+                    onLoginSuccess("Médico")
+                } else {
+                    // Si no se encuentra en las tablas locales (podría pasar si solo está en Firebase)
+                    onLoginSuccess("Paciente")
+                }
+            } else {
+                isLoading = false
+                val e = result.exceptionOrNull()
+                snackbarHostState.showSnackbar("Error: ${e?.localizedMessage ?: "Credenciales inválidas"}")
             }
         }
     }
@@ -203,6 +222,6 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenPreview() {
     MediCitasTheme {
-        LoginScreen()
+        LoginScreen(onLoginSuccess = {})
     }
 }

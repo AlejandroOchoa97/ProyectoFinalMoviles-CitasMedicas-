@@ -64,19 +64,23 @@ fun AppNavigation(
             onSkip = { currentRoute = Routes.LOGIN }
         )
         Routes.LOGIN -> LoginScreen(
-            onLoginSuccess = { 
-                currentRoute = Routes.DOCTOR_HOME 
+            onLoginSuccess = { role ->
+                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
             },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
-            authRepository = authRepository
+            authRepository = authRepository,
+            patientRepository = patientRepository,
+            doctorRepository = doctorRepository
         )
         Routes.RECOVER_PASSWORD -> RecoverPasswordScreen(
             onBack = { currentRoute = Routes.LOGIN }
         )
         Routes.REGISTER -> RegisterScreen(
             onBack = { currentRoute = Routes.LOGIN },
-            onRegistrationComplete = { currentRoute = Routes.LOGIN },
+            onRegistrationComplete = { role ->
+                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
+            },
             authRepository = authRepository
         )
         Routes.PATIENT_HOME -> PatientHomeScreen(
