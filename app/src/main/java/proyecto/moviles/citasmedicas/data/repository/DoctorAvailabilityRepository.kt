@@ -36,4 +36,16 @@ class DoctorAvailabilityRepository(
         doctorAvailabilityDAO.deleteAvailabilityByDoctorId(doctorId)
         doctorAvailabilityDAO.insertAvailabilityBlocks(availabilityBlocks)
     }
+
+    suspend fun replaceAvailabilityForDoctorAndDay(
+        doctorId: Int,
+        day: String,
+        availabilityBlocks: List<DoctorAvailabilityEntity>
+    ) {
+        doctorAvailabilityDAO.deleteAvailabilityByDoctorAndDay(
+            doctorId = doctorId,
+            day = day
+        )
+        doctorAvailabilityDAO.insertAvailabilityBlocks(availabilityBlocks)
+    }
 }

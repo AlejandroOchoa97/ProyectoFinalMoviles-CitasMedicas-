@@ -41,4 +41,13 @@ interface DoctorAvailabilityDAO {
      */
     @Query("DELETE FROM doctor_availability WHERE doctorId = :doctorId")
     suspend fun deleteAvailabilityByDoctorId(doctorId: Int)
+
+    /**
+     * Elimina únicamente los bloques de un médico para un día específico.
+     */
+    @Query("DELETE FROM doctor_availability WHERE doctorId = :doctorId AND day = :day")
+    suspend fun deleteAvailabilityByDoctorAndDay(
+        doctorId: Int,
+        day: String
+    )
 }
