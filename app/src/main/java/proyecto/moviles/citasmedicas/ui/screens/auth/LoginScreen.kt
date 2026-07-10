@@ -88,7 +88,7 @@ fun LoginScreen(
         scope.launch {
             val result = authRepository.login(email, password)
             if (result.isSuccess) {
-                // Determinar el rol buscando en las tablas locales
+
                 val patient = patientRepository?.getPatientByEmail(email)
                 val doctor = if (patient == null) doctorRepository?.getDoctorByEmail(email) else null
                 

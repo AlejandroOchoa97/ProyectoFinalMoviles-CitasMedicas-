@@ -1,5 +1,6 @@
 package proyecto.moviles.citasmedicas.data.local
 
+import android.util.Log
 import proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity
 import proyecto.moviles.citasmedicas.data.local.entity.DoctorAvailabilityEntity
 import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
@@ -27,18 +28,23 @@ class LocalDataSeeder(
      * Prepara pacientes, médicos, citas y disponibilidad demo.
      */
     suspend fun seedIfNeeded() {
+        Log.d("LocalDataSeeder", "Iniciando verificación de datos (Room)...")
         seedPatientsIfNeeded()
         seedDoctorsIfNeeded()
         seedAppointmentsIfNeeded()
         seedDoctorAvailabilityIfNeeded()
+        Log.d("LocalDataSeeder", "Verificación de datos completada.")
     }
 
     /**
      * Inserta pacientes demo para que el médico tenga varias citas visibles.
      */
     private suspend fun seedPatientsIfNeeded() {
-        if (patientRepository.getAllPatients().isNotEmpty()) return
+        val count = patientRepository.getAllPatients().size
+        Log.d("LocalDataSeeder", "Pacientes actuales en Room: $count")
+        if (count > 0) return
 
+        Log.d("LocalDataSeeder", "Insertando pacientes iniciales...")
         listOf(
             PatientEntity(
                 name = "Juan Pérez",
