@@ -41,6 +41,8 @@ fun DoctorAppointmentDetailScreen(
     appointmentId: Int,
     onBack: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    onNavigateHome: () -> Unit = {},
+    onNavigateAvailability: () -> Unit = {},
     appointmentRepository: AppointmentRepository? = null,
     patientRepository: PatientRepository? = null
 ) {
@@ -88,7 +90,17 @@ fun DoctorAppointmentDetailScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar(selectedIndex = 1) // Historial
+            BottomNavigationBar(
+                selectedIndex = 1,
+                middleLabel = "Disponibilidad",
+                onItemSelected = { index ->
+                    when (index) {
+                        0 -> onNavigateHome()
+                        1 -> onNavigateAvailability()
+                        2 -> onProfileClick()
+                    }
+                }
+            )
         },
         containerColor = AppBackground
     ) { paddingValues ->

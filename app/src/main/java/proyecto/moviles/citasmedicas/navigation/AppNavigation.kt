@@ -219,6 +219,8 @@ fun AppNavigation(
             appointmentId = selectedAppointmentId,
             onBack = { currentRoute = Routes.DOCTOR_HOME },
             onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
+            onNavigateHome = { currentRoute = Routes.DOCTOR_HOME },
+            onNavigateAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
             appointmentRepository = appointmentRepository,
             patientRepository = patientRepository
         )

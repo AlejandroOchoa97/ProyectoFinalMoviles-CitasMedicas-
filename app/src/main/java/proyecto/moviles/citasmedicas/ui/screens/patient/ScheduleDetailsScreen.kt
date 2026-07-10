@@ -1,4 +1,4 @@
-package proyecto.moviles.citasmedicas.ui.screens.patient
+﻿package proyecto.moviles.citasmedicas.ui.screens.patient
 
 /* Agendamiento: fecha, horario disponible real y motivo antes de guardar en Room. */
 
@@ -64,25 +64,32 @@ fun ScheduleDetailsScreen(
     patientId: Int = 1,
     doctorId: Int = 1
 ) {
+    // Se crea el ViewModel de esta pantalla.
+    // Aqui se controla la fecha, el horario, el motivo y el guardado de la cita.
     val viewModel = remember(appointmentRepository, doctorAvailabilityRepository) {
         ScheduleAppointmentViewModel(
             appointmentRepository = appointmentRepository,
             doctorAvailabilityRepository = doctorAvailabilityRepository
         )
     }
+
+    // uiState guarda lo que se muestra en pantalla: horarios, fecha seleccionada,
+    // mensajes de carga, errores y confirmacion.
     val uiState = viewModel.uiState
     val coroutineScope = rememberCoroutineScope()
 
-    // Carga horarios reales del médico seleccionado al abrir la pantalla.
+    // Al abrir la pantalla se cargan los horarios reales del medico seleccionado desde Room.
     LaunchedEffect(doctorId) {
         viewModel.loadAvailableTimes(doctorId)
     }
 
+    // Scaffold nos ayuda a separar la barra superior, el contenido y el boton inferior.
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = AppBackground,
         topBar = { ScheduleDetailsTopBar(onBack = onBack) },
         bottomBar = {
+            // El boton queda fijo abajo para confirmar la cita sin perderlo al hacer scroll.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -93,16 +100,19 @@ fun ScheduleDetailsScreen(
             ) {
                 AppButton(
                     text = if (uiState.isSaving) "Guardando..." else "Confirmar",
+                    // Se desactiva si esta guardando, cargando horarios o si no hay horarios disponibles.
                     enabled = !uiState.isSaving &&
                         !uiState.isLoadingTimes &&
                         uiState.availableTimes.isNotEmpty(),
                     onClick = {
                         coroutineScope.launch {
+                            // Aqui se guarda la cita en Room con el paciente y medico seleccionados.
                             val saved = viewModel.confirmAppointment(
                                 patientId = patientId,
                                 doctorId = doctorId
                             )
 
+                            // Si se guardo bien, se regresa la fecha, hora y motivo a la navegacion.
                             val confirmedTime = viewModel.uiState.selectedTime
                             if (saved && confirmedTime != null) {
                                 onConfirm(
@@ -121,8 +131,10 @@ fun ScheduleDetailsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // Se agrega scroll para que no se corte en pantallas pequenas.
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
+                // Espacio extra para que el boton inferior no tape el campo del motivo.
                 .padding(bottom = 96.dp)
         ) {
             Text(
@@ -133,7 +145,7 @@ fun ScheduleDetailsScreen(
             )
 
             Text(
-                text = "Confirma tu próxima consulta médica",
+                text = "Confirma tu prÃ³xima consulta mÃ©dica",
                 style = MaterialTheme.typography.bodyLarge,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 2.dp)
@@ -141,6 +153,7 @@ fun ScheduleDetailsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Calendario donde el paciente selecciona el dia de la consulta.
             ScheduleCalendarCard(
                 visibleMonth = uiState.visibleMonth,
                 selectedDate = uiState.selectedDate,
@@ -148,6 +161,7 @@ fun ScheduleDetailsScreen(
                 onNextMonthClick = viewModel::showNextMonth,
                 onDateSelected = { date ->
                     coroutineScope.launch {
+                        // Cuando cambia la fecha, se actualizan tambien los horarios disponibles.
                         viewModel.selectDate(date)
                         viewModel.loadAvailableTimes(doctorId)
                     }
@@ -165,6 +179,7 @@ fun ScheduleDetailsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Los horarios se acomodan en filas de tres botones para que se vea ordenado.
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (uiState.availableTimes.isEmpty() && !uiState.isLoadingTimes) {
                     Text(
@@ -180,6 +195,7 @@ fun ScheduleDetailsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         rowTimes.forEach { time ->
+                            // Cada boton representa un horario disponible del medico.
                             TimeSlotButton(
                                 time = time,
                                 selected = uiState.selectedTime == time,
@@ -194,6 +210,7 @@ fun ScheduleDetailsScreen(
 
             Spacer(modifier = Modifier.height(22.dp))
 
+            // Campo donde el paciente escribe el motivo; este dato se guarda con la cita.
             OutlinedTextField(
                 value = uiState.reason,
                 onValueChange = viewModel::updateReason,
@@ -216,6 +233,7 @@ fun ScheduleDetailsScreen(
                 )
             )
 
+            // Mensaje de error si no se pudo cargar o guardar la cita.
             uiState.errorMessage?.let { message ->
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
@@ -225,6 +243,7 @@ fun ScheduleDetailsScreen(
                 )
             }
 
+            // Mensaje de exito cuando la cita se guarda correctamente.
             uiState.successMessage?.let { message ->
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
@@ -239,6 +258,7 @@ fun ScheduleDetailsScreen(
 
 @Composable
 private fun ScheduleDetailsTopBar(onBack: () -> Unit) {
+    // Barra superior con regreso, nombre de la app e icono de perfil.
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,9 +304,11 @@ private fun ScheduleDetailsTopBar(onBack: () -> Unit) {
 @Composable
 fun ScheduleDetailsScreenPreview() {
     MediCitasTheme {
+        // Preview para revisar esta pantalla en Android Studio sin correr toda la app.
         ScheduleDetailsScreen(
             onBack = {},
             onConfirm = { _, _, _ -> }
         )
     }
 }
+

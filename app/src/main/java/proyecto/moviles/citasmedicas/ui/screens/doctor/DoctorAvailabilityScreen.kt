@@ -1,6 +1,6 @@
-package proyecto.moviles.citasmedicas.ui.screens.doctor
+﻿package proyecto.moviles.citasmedicas.ui.screens.doctor
 
-/* Disponibilidad médica: configura bloques por día con TimePicker real y validación. */
+/* Disponibilidad mÃ©dica: configura bloques por dÃ­a con TimePicker real y validaciÃ³n. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -87,8 +87,10 @@ import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAvailabilityBlockUi
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAvailabilityViewModel
 
+// Formato de hora que usamos en toda la pantalla para guardar y mostrar horarios.
 private val AvailabilityTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
+// Esta clase pequena me ayuda a saber que bloque estoy editando y si es hora de inicio o fin.
 private data class TimeEditTarget(
     val blockIndex: Int,
     val isStartTime: Boolean
@@ -103,19 +105,28 @@ fun DoctorAvailabilityScreen(
     availabilityRepository: DoctorAvailabilityRepository? = null,
     doctorId: Int = 1
 ) {
+    // Este snackbar muestra avisos rapidos, por ejemplo cuando se guardan los cambios.
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Aqui guardo temporalmente que hora estoy editando.
+    // Si es null significa que el TimePicker esta cerrado.
     var timeEditTarget by remember { mutableStateOf<TimeEditTarget?>(null) }
 
+    // ViewModel que maneja la disponibilidad del medico y la comunicacion con Room.
     val viewModel = remember(availabilityRepository) {
         DoctorAvailabilityViewModel(availabilityRepository)
     }
+
+    // Estado de la pantalla: dia seleccionado, bloques, tarifa y mensajes.
     val uiState = viewModel.uiState
 
+    // Carga la disponibilidad del medico cuando se abre la pantalla.
     LaunchedEffect(doctorId) {
         viewModel.loadAvailability(doctorId)
     }
 
+    // Si el ViewModel manda un mensaje, aqui se muestra como Snackbar.
     LaunchedEffect(uiState.message, uiState.errorMessage) {
         val message = uiState.message ?: uiState.errorMessage
         if (message != null) {
@@ -170,10 +181,12 @@ fun DoctorAvailabilityScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Encabezado del mes actual.
             MonthHeader()
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Tira de calendario para seleccionar el dia al que se le asignan horarios.
             CalendarStrip(
                 selectedDay = uiState.selectedDay,
                 onDaySelected = { day ->
@@ -199,24 +212,27 @@ fun DoctorAvailabilityScreen(
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
+                // Agrega un nuevo bloque de disponibilidad, por ejemplo turno manana o tarde.
                 TextButton(onClick = viewModel::addBlock) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Añadir bloque", fontWeight = FontWeight.SemiBold)
+                    Text("AÃ±adir bloque", fontWeight = FontWeight.SemiBold)
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Si el dia no tiene horarios, se muestra un mensaje para que el medico agregue uno.
             if (uiState.blocks.isEmpty()) {
                 Text(
-                    text = "No hay bloques para este día. Agrega uno para configurar disponibilidad.",
+                    text = "No hay bloques para este dÃ­a. Agrega uno para configurar disponibilidad.",
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 12.dp)
                 )
             }
 
+            // Se dibuja cada bloque configurado con sus horas de inicio y fin.
             uiState.blocks.forEachIndexed { index, block ->
                 ShiftBlock(
                     block = block,
@@ -263,7 +279,7 @@ fun DoctorAvailabilityScreen(
             )
 
             Text(
-                text = "Este precio se mostrará a los pacientes al reservar.",
+                text = "Este precio se mostrarÃ¡ a los pacientes al reservar.",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 8.dp, start = 4.dp)
@@ -290,6 +306,7 @@ fun DoctorAvailabilityScreen(
         }
     }
 
+    // Si el usuario toca una hora, se abre el TimePicker para modificarla.
     timeEditTarget?.let { target ->
         val block = uiState.blocks.getOrNull(target.blockIndex)
         if (block != null) {
@@ -297,6 +314,7 @@ fun DoctorAvailabilityScreen(
                 initialTime = if (target.isStartTime) block.startTime else block.endTime,
                 onDismiss = { timeEditTarget = null },
                 onConfirm = { selectedTime ->
+                    // Dependiendo del campo seleccionado, se actualiza inicio o fin del bloque.
                     if (target.isStartTime) {
                         viewModel.updateStartTime(target.blockIndex, selectedTime)
                     } else {
@@ -313,6 +331,7 @@ fun DoctorAvailabilityScreen(
 
 @Composable
 private fun MonthHeader() {
+    // Muestra el mes actual, por ejemplo "Julio 2026".
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -333,6 +352,7 @@ private fun MonthHeader() {
 }
 
 private fun YearMonth.toSpanishTitle(): String {
+    // Convierte el YearMonth de Kotlin a texto en espanol para mostrarlo bonito.
     val months = listOf(
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -377,6 +397,7 @@ private fun CalendarStrip(
     }
 }
 
+// Componente reutilizable para pintar cada dia del calendario.
 @Composable
 private fun CalendarDay(
     day: String,
@@ -413,6 +434,7 @@ private fun CalendarDay(
     }
 }
 
+// Tarjeta que representa un bloque de disponibilidad del medico.
 @Composable
 private fun ShiftBlock(
     block: DoctorAvailabilityBlockUi,
@@ -483,6 +505,7 @@ private fun ShiftBlock(
     }
 }
 
+// Campo visual para mostrar una hora y abrir el selector al tocarlo.
 @Composable
 private fun TimePickerField(
     label: String,
@@ -518,12 +541,14 @@ private fun TimePickerField(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+// Dialog con TimePicker real de Material 3 para escoger hora.
 @Composable
 private fun AvailabilityTimePickerDialog(
     initialTime: String,
     onDismiss: () -> Unit,
     onConfirm: (LocalTime) -> Unit
 ) {
+    // Convierte la hora guardada como texto a LocalTime para inicializar el TimePicker.
     val initialLocalTime = remember(initialTime) {
         runCatching { LocalTime.parse(initialTime, AvailabilityTimeFormatter) }
             .getOrDefault(LocalTime.of(8, 0))
@@ -563,8 +588,9 @@ private fun AvailabilityTimePickerDialog(
 }
 
 private fun DoctorAvailabilityBlockUi.iconForTitle(): ImageVector {
+    // Cambia el icono segun el nombre del turno para que se entienda mejor visualmente.
     return when {
-        title.contains("mañana", ignoreCase = true) -> Icons.Default.LightMode
+        title.contains("maÃ±ana", ignoreCase = true) -> Icons.Default.LightMode
         title.contains("tarde", ignoreCase = true) -> Icons.Default.DarkMode
         else -> Icons.Default.AccessTime
     }
@@ -574,6 +600,8 @@ private fun DoctorAvailabilityBlockUi.iconForTitle(): ImageVector {
 @Composable
 fun DoctorAvailabilityScreenPreview() {
     MediCitasTheme {
+        // Preview para revisar esta pantalla en Android Studio sin correr toda la app.
         DoctorAvailabilityScreen()
     }
 }
+
