@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit = {},
+    onLoginSuccess: (String) -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     authRepository: AuthRepository? = null
@@ -76,7 +76,7 @@ fun LoginScreen(
         }
 
         if (authRepository == null) {
-            onLoginSuccess()
+            onLoginSuccess(email.trim())
             return
         }
 
@@ -85,7 +85,8 @@ fun LoginScreen(
             val result = authRepository.login(email, password)
             isLoading = false
             result.onSuccess {
-                onLoginSuccess()
+                // Firebase autentica la cuenta; la navegación buscará este correo en Room.
+                onLoginSuccess(email.trim())
             }.onFailure { e ->
                 snackbarHostState.showSnackbar("Error: ${e.localizedMessage ?: "Credenciales inválidas"}")
             }

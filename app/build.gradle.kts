@@ -14,6 +14,7 @@ android {
             localPropertiesFile.inputStream().use(::load)
         }
     }
+    val mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
 
     namespace = "proyecto.moviles.citasmedicas"
     compileSdk = 36
@@ -26,7 +27,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        buildConfigField("Boolean", "MAPS_API_KEY_AVAILABLE", mapsApiKey.isNotBlank().toString())
     }
 
     buildTypes {
@@ -44,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

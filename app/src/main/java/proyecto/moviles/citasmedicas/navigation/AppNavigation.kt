@@ -3,9 +3,11 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
@@ -42,7 +44,35 @@ fun AppNavigation(
 ) {
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
+    var selectedPatientId by rememberSaveable { mutableStateOf(1) }
     var selectedDoctorId by rememberSaveable { mutableStateOf(1) }
+    val scope = rememberCoroutineScope()
+
+    fun navigateAfterFirebaseLogin(email: String) {
+        scope.launch {
+            val cleanEmail = email.trim()
+
+            // Firebase valida la cuenta. Room decide si ese correo pertenece a paciente o médico.
+            val patient = patientRepository?.getPatientByEmail(cleanEmail)
+            if (patient != null) {
+                selectedPatientId = patient.id
+                currentRoute = Routes.PATIENT_HOME
+                return@launch
+            }
+
+            val doctor = doctorRepository?.getDoctorByEmail(cleanEmail)
+            if (doctor != null) {
+                selectedDoctorId = doctor.id
+                currentRoute = Routes.DOCTOR_HOME
+                return@launch
+            }
+
+            // Si el usuario existe en Firebase pero aún no tiene perfil local,
+            // lo mandamos al flujo paciente para evitar cargar el médico demo por error.
+            selectedPatientId = 1
+            currentRoute = Routes.PATIENT_HOME
+        }
+    }
 
     when (currentRoute) {
         Routes.SPLASH -> SplashScreen(
@@ -64,9 +94,7 @@ fun AppNavigation(
             onSkip = { currentRoute = Routes.LOGIN }
         )
         Routes.LOGIN -> LoginScreen(
-            onLoginSuccess = { 
-                currentRoute = Routes.DOCTOR_HOME 
-            },
+            onLoginSuccess = { email -> navigateAfterFirebaseLogin(email) },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
             authRepository = authRepository
@@ -77,7 +105,9 @@ fun AppNavigation(
         Routes.REGISTER -> RegisterScreen(
             onBack = { currentRoute = Routes.LOGIN },
             onRegistrationComplete = { currentRoute = Routes.LOGIN },
-            authRepository = authRepository
+            authRepository = authRepository,
+            patientRepository = patientRepository,
+            doctorRepository = doctorRepository
         )
         Routes.PATIENT_HOME -> PatientHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -87,7 +117,8 @@ fun AppNavigation(
             onAppointmentDetails = { id ->
                 selectedAppointmentId = id
                 currentRoute = Routes.PATIENT_APPOINTMENT_DETAIL
-            }
+            },
+            patientId = selectedPatientId
         )
         Routes.PATIENT_APPOINTMENT_DETAIL -> PatientAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
@@ -113,18 +144,23 @@ fun AppNavigation(
                 currentRoute = Routes.PATIENT_HOME
             },
             appointmentRepository = appointmentRepository,
-            patientId = 1,
+            patientId = selectedPatientId,
             doctorId = selectedDoctorId
         )
         Routes.APPOINTMENT_HISTORY -> AppointmentHistoryScreen(
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
-            onNavigateProfile = { currentRoute = Routes.USER_PROFILE }
+            onNavigateProfile = { currentRoute = Routes.USER_PROFILE },
+            patientId = selectedPatientId
         )
         Routes.USER_PROFILE -> UserProfileScreen(
             onBack = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHome = { currentRoute = Routes.PATIENT_HOME },
             onNavigateHistory = { currentRoute = Routes.APPOINTMENT_HISTORY },
-            onLogout = { currentRoute = Routes.LOGIN }
+            onLogout = {
+                authRepository?.logout()
+                currentRoute = Routes.LOGIN
+            },
+            patientId = selectedPatientId
         )
         Routes.DOCTOR_HOME -> DoctorHomeScreen(
             onBack = { currentRoute = Routes.LOGIN },
@@ -137,7 +173,7 @@ fun AppNavigation(
             appointmentRepository = appointmentRepository,
             patientRepository = patientRepository,
             doctorRepository = doctorRepository,
-            doctorId = 1
+            doctorId = selectedDoctorId
         )
         Routes.DOCTOR_APPOINTMENT_DETAIL -> DoctorAppointmentDetailScreen(
             appointmentId = selectedAppointmentId,
@@ -150,18 +186,21 @@ fun AppNavigation(
             onProfileClick = { currentRoute = Routes.DOCTOR_PROFILE },
             onNavigateToHome = { currentRoute = Routes.DOCTOR_HOME },
             availabilityRepository = doctorAvailabilityRepository,
-            doctorId = 1
+            doctorId = selectedDoctorId
         )
         Routes.DOCTOR_PROFILE -> DoctorProfileScreen(
             onBack = { currentRoute = Routes.DOCTOR_HOME },
             onNavigateHome = { currentRoute = Routes.DOCTOR_HOME },
             onNavigateAvailability = { currentRoute = Routes.DOCTOR_AVAILABILITY },
-            onLogout = { currentRoute = Routes.LOGIN },
+            onLogout = {
+                authRepository?.logout()
+                currentRoute = Routes.LOGIN
+            },
             doctorRepository = doctorRepository,
-            doctorId = 1
+            doctorId = selectedDoctorId
         )
         else -> LoginScreen(
-            onLoginSuccess = { currentRoute = Routes.PATIENT_HOME },
+            onLoginSuccess = { email -> navigateAfterFirebaseLogin(email) },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
             authRepository = authRepository
