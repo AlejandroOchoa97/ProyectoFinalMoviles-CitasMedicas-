@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,7 +102,7 @@ fun PatientHomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 92.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 150.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -121,6 +123,23 @@ fun PatientHomeScreen(
                     FilterChip("Pasadas", uiState.selectedFilter == PatientAppointmentFilter.PAST) {
                         viewModel.selectFilter(PatientAppointmentFilter.PAST)
                     }
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                Button(
+                    onClick = onScheduleAppointment,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue,
+                        contentColor = AppWhite
+                    )
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Spacer(Modifier.size(8.dp))
+                    Text("Buscar médico y agendar cita", fontWeight = FontWeight.SemiBold)
                 }
 
                 uiState.errorMessage?.let { message ->

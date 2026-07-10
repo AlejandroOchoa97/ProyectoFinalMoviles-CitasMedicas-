@@ -15,7 +15,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import java.time.format.DateTimeFormatter
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.PatientRepository
+import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
 import proyecto.moviles.citasmedicas.ui.theme.*
 import proyecto.moviles.citasmedicas.ui.viewmodel.DoctorAppointmentDetailViewModel
@@ -49,6 +54,10 @@ fun DoctorAppointmentDetailScreen(
 
     val uiState = viewModel.uiState
     val appointment = uiState.appointment
+    val scope = rememberCoroutineScope()
+    var showPrescriptionEditor by remember { mutableStateOf(false) }
+    var showFinishDialog by remember { mutableStateOf(false) }
+    var showCancelDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(appointmentId) {
         viewModel.loadAppointment(appointmentId)
@@ -97,6 +106,16 @@ fun DoctorAppointmentDetailScreen(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            uiState.successMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PrimaryBlue,
+                    fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -239,7 +258,7 @@ fun DoctorAppointmentDetailScreen(
 
             // Action Buttons
             Button(
-                onClick = { },
+                onClick = { showFinishDialog = true },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                 shape = RoundedCornerShape(27.dp)
@@ -253,7 +272,7 @@ fun DoctorAppointmentDetailScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
-                    onClick = { },
+                    onClick = { showPrescriptionEditor = !showPrescriptionEditor },
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(25.dp),
                     border = BorderStroke(1.dp, PrimaryBlue)
@@ -263,7 +282,7 @@ fun DoctorAppointmentDetailScreen(
                     Text("Subir receta", color = PrimaryBlue, fontSize = 13.sp)
                 }
                 OutlinedButton(
-                    onClick = { },
+                    onClick = { onBack() },
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(25.dp),
                     border = BorderStroke(1.dp, PrimaryBlue)
@@ -274,10 +293,33 @@ fun DoctorAppointmentDetailScreen(
                 }
             }
 
+            if (showPrescriptionEditor) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = uiState.prescriptionText,
+                    onValueChange = viewModel::updatePrescriptionText,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(130.dp),
+                    label = { Text("Receta e indicaciones") },
+                    placeholder = { Text("Escribe medicamentos, dosis o recomendaciones...") },
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = { scope.launch { viewModel.savePrescription() } },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    shape = RoundedCornerShape(22.dp)
+                ) {
+                    Text("Guardar receta", fontWeight = FontWeight.Bold)
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(
-                onClick = { },
+                onClick = { showCancelDialog = true },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Icon(Icons.Default.Delete, null, tint = ErrorRed, modifier = Modifier.size(20.dp))
@@ -287,6 +329,44 @@ fun DoctorAppointmentDetailScreen(
             
             Spacer(modifier = Modifier.height(40.dp))
         }
+    }
+
+    if (showFinishDialog) {
+        AlertDialog(
+            onDismissRequest = { showFinishDialog = false },
+            title = { Text("Finalizar cita") },
+            text = { Text("¿Seguro que quieres marcar esta cita como terminada?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showFinishDialog = false
+                        scope.launch { viewModel.updateStatus("COMPLETED", "Cita finalizada") }
+                    }
+                ) { Text("Sí, finalizar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFinishDialog = false }) { Text("No") }
+            }
+        )
+    }
+
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancelar consulta") },
+            text = { Text("¿Seguro que quieres cancelar esta consulta?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelDialog = false
+                        scope.launch { viewModel.updateStatus("CANCELLED", "Consulta cancelada") }
+                    }
+                ) { Text("Sí, cancelar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) { Text("No") }
+            }
+        )
     }
 }
 

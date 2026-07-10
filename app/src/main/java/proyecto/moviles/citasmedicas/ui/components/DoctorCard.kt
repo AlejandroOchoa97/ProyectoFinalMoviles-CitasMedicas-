@@ -79,7 +79,11 @@ fun DoctorCard(doctor: Doctor, onProfileClick: () -> Unit, modifier: Modifier = 
             ) {
                 Column {
                     Text("Experiencia", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                    Text("${doctor.experienceYears} años exp.", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (doctor.experienceYears > 0) "${doctor.experienceYears} años exp." else "Exp. pendiente",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Consulta", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
@@ -91,7 +95,7 @@ fun DoctorCard(doctor: Doctor, onProfileClick: () -> Unit, modifier: Modifier = 
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(7.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-            ) { Text("Ver perfil") }
+            ) { Text("Agendar cita") }
         }
     }
 }

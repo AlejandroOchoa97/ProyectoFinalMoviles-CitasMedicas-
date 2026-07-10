@@ -15,6 +15,7 @@ data class DoctorAppointment(
     val detailedReason: String = "",
     val specialty: String = "Medicina General",
     val status: String,
+    val prescription: String = "",
     val isUrgent: Boolean = false,
     val hasNotification: Boolean = false
 )

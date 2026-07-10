@@ -28,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,10 +36,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -92,6 +97,7 @@ fun PatientAppointmentDetailScreen(
     val appointment = uiState.appointment
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showCancelDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(appointmentId) {
         viewModel.loadAppointment(appointmentId)
@@ -135,16 +141,25 @@ fun PatientAppointmentDetailScreen(
                 }
             }
 
+            if (appointment.prescription.isNotBlank()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = AppWhite),
+                    border = BorderStroke(1.dp, BorderSoft),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Text("Receta médica", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                        Text(appointment.prescription, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+
             uiState.errorMessage?.let { message ->
                 Text(message, color = MaterialTheme.colorScheme.error)
             }
 
             Button(
-                onClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Cancelación de cita pendiente")
-                    }
-                },
+                onClick = { showCancelDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AppWhite,
@@ -156,6 +171,32 @@ fun PatientAppointmentDetailScreen(
             }
             Spacer(Modifier.height(80.dp))
         }
+    }
+
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancelar cita") },
+            text = { Text("¿Seguro que quieres cancelar esta cita?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelDialog = false
+                        scope.launch {
+                            val cancelled = viewModel.cancelAppointment()
+                            snackbarHostState.showSnackbar(
+                                if (cancelled) "Cita cancelada" else "No se pudo cancelar la cita"
+                            )
+                        }
+                    }
+                ) { Text("Sí, cancelar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
 

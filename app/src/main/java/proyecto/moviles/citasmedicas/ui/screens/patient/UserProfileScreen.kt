@@ -1,6 +1,6 @@
-package proyecto.moviles.citasmedicas.ui.screens.patient
+﻿package proyecto.moviles.citasmedicas.ui.screens.patient
 
-/* Perfil del paciente: muestra información del paciente cargada desde Room. */
+/* Perfil del paciente: muestra informaciÃ³n del paciente cargada desde Room. */
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -36,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -73,6 +76,7 @@ fun UserProfileScreen(
     onNavigateHome: () -> Unit,
     onNavigateHistory: () -> Unit,
     onLogout: () -> Unit,
+    onEditProfile: () -> Unit = {},
     patientRepository: PatientRepository? = null,
     patientId: Int = 1,
     modifier: Modifier = Modifier
@@ -104,6 +108,8 @@ fun UserProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -123,7 +129,12 @@ fun UserProfileScreen(
                     .background(SecondaryBlue, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.AccountCircle, null, tint = PrimaryBlue, modifier = Modifier.size(58.dp))
+                Text(
+                    text = uiState.name.toInitials(),
+                    color = PrimaryBlue,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Text(uiState.name, color = TextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -138,11 +149,22 @@ fun UserProfileScreen(
 
             ProfileSection("CUENTA") {
                 ProfileOption(Icons.Filled.Person, "Nombre", uiState.name)
-                ProfileOption(Icons.Filled.Email, "Correo electrónico", uiState.email)
-                ProfileOption(Icons.Filled.Phone, "Teléfono", uiState.phone)
+                ProfileOption(Icons.Filled.Email, "Correo electrÃ³nico", uiState.email)
+                ProfileOption(Icons.Filled.Phone, "TelÃ©fono", uiState.phone)
                 ProfileOption(Icons.Filled.Cake, "Fecha de nacimiento", uiState.birthDate)
-                ProfileOption(Icons.Filled.Edit, "Editar perfil", "Pendiente")
-                ProfileOption(Icons.Filled.Lock, "Cambiar contraseña", "Pendiente")
+                ProfileOption(Icons.Filled.Lock, "Cambiar contraseÃ±a", "Pendiente")
+            }
+
+            OutlinedButton(
+                onClick = onEditProfile,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = null, tint = PrimaryBlue)
+                Spacer(Modifier.size(8.dp))
+                Text("Editar perfil", color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
             }
 
             ProfileSection("PREFERENCIAS") {
@@ -162,9 +184,9 @@ fun UserProfileScreen(
                 })
             }
 
-            ProfileSection("INFORMACIÓN") {
+            ProfileSection("INFORMACIÃ“N") {
                 ProfileOption(Icons.Filled.Info, "Acerca de", "MediCitas")
-                ProfileOption(Icons.Filled.PrivacyTip, "Política de privacidad", "Ver documento")
+                ProfileOption(Icons.Filled.PrivacyTip, "PolÃ­tica de privacidad", "Ver documento")
             }
 
             Card(
@@ -181,15 +203,23 @@ fun UserProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.AutoMirrored.Outlined.ExitToApp, null, tint = ErrorRed)
-                    Text("  Cerrar sesión", color = ErrorRed, fontWeight = FontWeight.SemiBold)
+                    Text("  Cerrar sesiÃ³n", color = ErrorRed, fontWeight = FontWeight.SemiBold)
                 }
             }
 
             Spacer(Modifier.size(24.dp))
             Text("Perfil paciente conectado a Room", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-            Spacer(Modifier.size(80.dp))
+            Spacer(Modifier.size(150.dp))
         }
     }
+}
+
+private fun String.toInitials(): String {
+    val words = trim().split(" ").filter { it.isNotBlank() }
+    return words
+        .take(2)
+        .joinToString("") { it.first().uppercase() }
+        .ifBlank { "P" }
 }
 
 @Composable
@@ -243,3 +273,4 @@ private fun ProfileOption(
 private fun UserProfileScreenPreview() {
     MediCitasTheme { UserProfileScreen({}, {}, {}, {}) }
 }
+

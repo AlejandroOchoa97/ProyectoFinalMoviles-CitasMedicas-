@@ -131,11 +131,15 @@ fun RegisterScreen(
                 isLoading = false
 
                 result.onSuccess {
-                    snackbarHostState.showSnackbar("Registro exitoso")
+                    val cleanFullName = fullName.toDisplayName()
+
+                    // Guarda el nombre completo en Firebase Auth para recuperarlo al iniciar sesiÃ³n.
+                    authRepository.updateCurrentUserDisplayName(cleanFullName)
+
                     // Firebase Auth solo guarda el acceso. Room guarda el perfil de MediCitas.
                     if (role == "Paciente") {
                         val newPatient = PatientEntity(
-                            name = fullName.trim(),
+                            name = cleanFullName,
                             email = cleanEmail,
                             password = cleanPassword,
                             phone = phone.trim(),
@@ -148,7 +152,7 @@ fun RegisterScreen(
                         authRepository.activePatient = savedPatient
                     } else {
                         val newDoctor = DoctorEntity(
-                            name = fullName.trim(),
+                            name = cleanFullName,
                             email = cleanEmail,
                             password = cleanPassword,
                             specialty = "Medicina General",
@@ -165,8 +169,9 @@ fun RegisterScreen(
                         authRepository.activeDoctor = savedDoctor
                     }
 
-                    // Al registrarse correctamente regresa de inmediato al Login.
-                    // Si esperamos al Snackbar, la navegación tarda hasta que el mensaje desaparece.
+                    // Después del registro cerramos la sesión creada por Firebase.
+                    // Así vuelve al Login y el usuario inicia sesión de forma normal.
+                    authRepository.logout()
                     onRegistrationComplete(role)
                 }.onFailure { exception ->
                     snackbarHostState.showSnackbar(
@@ -439,6 +444,14 @@ private fun formatBirthDateInput(input: String): String {
             append(char)
         }
     }
+}
+
+private fun String.toDisplayName(): String {
+    return trim()
+        .lowercase()
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
 }
 
 @Preview(

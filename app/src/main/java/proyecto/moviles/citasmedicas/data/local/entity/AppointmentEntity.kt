@@ -96,6 +96,12 @@ data class AppointmentEntity(
     val status: String = AppointmentStatus.PENDING,
 
     /**
+     * Receta o indicaciones médicas capturadas por el médico al finalizar la consulta.
+     */
+    @ColumnInfo(name = "prescription")
+    val prescription: String = "",
+
+    /**
      * Fecha en la que se creó la cita.
      *
      * Por ahora también se guarda como String.

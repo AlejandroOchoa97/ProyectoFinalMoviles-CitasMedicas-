@@ -3,7 +3,6 @@ package proyecto.moviles.citasmedicas.ui.screens.auth
 /* Login visual: mantiene campos en memoria y delega navegación mediante callbacks. */
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,9 +38,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
 import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
@@ -53,11 +53,13 @@ import proyecto.moviles.citasmedicas.ui.components.AppLogoIcon
 import proyecto.moviles.citasmedicas.ui.components.AppPasswordField
 import proyecto.moviles.citasmedicas.ui.components.AppTextField
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
+import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
+import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
 import proyecto.moviles.citasmedicas.ui.theme.PrimaryBlue
 import proyecto.moviles.citasmedicas.ui.theme.TextSecondary
-import proyecto.moviles.citasmedicas.ui.theme.MediCitasTheme
-import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
-import kotlinx.coroutines.launch
+
+private const val ROLE_PATIENT = "PATIENT"
+private const val ROLE_DOCTOR = "DOCTOR"
 
 @Composable
 fun LoginScreen(
@@ -76,45 +78,59 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
 
     fun handleLogin() {
-        if (email.isBlank() || password.isBlank()) {
+        val cleanEmail = email.trim()
+
+        if (cleanEmail.isBlank() || password.isBlank()) {
             scope.launch { snackbarHostState.showSnackbar("Por favor, completa todos los campos") }
             return
         }
 
         if (authRepository == null) {
-            onLoginSuccess("Paciente")
+            onLoginSuccess(ROLE_PATIENT)
             return
         }
 
         isLoading = true
         scope.launch {
-            val result = authRepository.login(email, password)
-            if (result.isSuccess) {
+            val result = authRepository.login(cleanEmail, password)
 
-                val patient = patientRepository?.getPatientByEmail(email)
-                val doctor = if (patient == null) doctorRepository?.getDoctorByEmail(email) else null
-                
+            if (result.isSuccess) {
+                val firebaseDisplayName = result.getOrNull()?.displayName?.toDisplayName().orEmpty()
+                // Primero busca médico para corregir correos que se hayan creado como paciente por error.
+                val doctor = doctorRepository?.getDoctorByEmail(cleanEmail)
+                val patient = if (doctor == null) patientRepository?.getPatientByEmail(cleanEmail) else null
+
                 isLoading = false
-                if (patient != null) {
-                    authRepository.activePatient = patient
-                    onLoginSuccess("Paciente")
-                } else if (doctor != null) {
-                    authRepository.activeDoctor = doctor
-                    onLoginSuccess("Médico")
-                } else {
-                    // Si el usuario existe en Firebase pero no en Room (pudo registrarse en otro dispositivo),
-                    // creamos un perfil básico de paciente para evitar que cargue datos de otros usuarios.
-                    val newPatient = PatientEntity(
-                        name = email.substringBefore("@"),
-                        email = email,
-                        password = password,
-                        phone = "Pendiente",
-                        birthDate = ""
-                    )
-                    patientRepository?.insertPatient(newPatient)
-                    val savedPatient = patientRepository?.getPatientByEmail(email)
-                    authRepository.activePatient = savedPatient
-                    onLoginSuccess("Paciente")
+
+                when {
+                    doctor != null -> {
+                        val updatedDoctor = doctor.withBetterName(firebaseDisplayName)
+                        if (updatedDoctor.name != doctor.name) {
+                            doctorRepository?.updateDoctor(updatedDoctor)
+                        }
+
+                        authRepository.activePatient = null
+                        authRepository.activeDoctor = updatedDoctor
+                        onLoginSuccess(ROLE_DOCTOR)
+                    }
+
+                    patient != null -> {
+                        val updatedPatient = patient.withBetterName(firebaseDisplayName)
+                        if (updatedPatient.name != patient.name) {
+                            patientRepository?.updatePatient(updatedPatient)
+                        }
+
+                        authRepository.activeDoctor = null
+                        authRepository.activePatient = updatedPatient
+                        onLoginSuccess(ROLE_PATIENT)
+                    }
+
+                    else -> {
+                        authRepository.logout()
+                        snackbarHostState.showSnackbar(
+                            "La cuenta existe en Firebase, pero no tiene perfil local. Regístrala otra vez desde esta app."
+                        )
+                    }
                 }
             } else {
                 isLoading = false
@@ -171,7 +187,9 @@ fun LoginScreen(
             AppPasswordField(value = password, onValueChange = { password = it })
 
             Row(
-                modifier = Modifier.fillMaxWidth().height(58.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -225,6 +243,29 @@ fun LoginScreen(
     }
 }
 
+private fun PatientEntity.withBetterName(firebaseDisplayName: String): PatientEntity {
+    return if (firebaseDisplayName.isMoreCompleteThan(name)) copy(name = firebaseDisplayName) else this
+}
+
+private fun DoctorEntity.withBetterName(firebaseDisplayName: String): DoctorEntity {
+    return if (firebaseDisplayName.isMoreCompleteThan(name)) copy(name = firebaseDisplayName) else this
+}
+
+private fun String.isMoreCompleteThan(currentName: String): Boolean {
+    val newWords = trim().split(" ").filter { it.isNotBlank() }
+    val currentWords = currentName.trim().split(" ").filter { it.isNotBlank() }
+
+    return newWords.size > currentWords.size && newWords.joinToString(" ").isNotBlank()
+}
+
+private fun String.toDisplayName(): String {
+    return trim()
+        .lowercase()
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+}
+
 @Preview(
     name = "Login MediCitas",
     showBackground = true,
@@ -235,6 +276,6 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenPreview() {
     MediCitasTheme {
-        LoginScreen(onLoginSuccess = {})
+        LoginScreen()
     }
 }

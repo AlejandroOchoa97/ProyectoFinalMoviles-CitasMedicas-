@@ -2,6 +2,7 @@ package proyecto.moviles.citasmedicas.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
 import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
@@ -31,6 +32,19 @@ class AuthRepository(
         return try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
             Result.success(result.user)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateCurrentUserDisplayName(fullName: String): Result<Unit> {
+        return try {
+            val profileUpdates = UserProfileChangeRequest.Builder()
+                .setDisplayName(fullName.trim())
+                .build()
+
+            firebaseAuth.currentUser?.updateProfile(profileUpdates)?.await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -54,10 +54,26 @@ class PatientProfileViewModel(
 
     private fun PatientEntity.toUiState(): PatientProfileUiState {
         return PatientProfileUiState(
-            name = name,
+            name = name.toDisplayNameWithFallback(),
             email = email,
             phone = phone,
             birthDate = birthDate
         )
+    }
+
+    private fun String.toDisplayNameWithFallback(): String {
+        val words = trim()
+            .lowercase()
+            .split(" ")
+            .filter { it.isNotBlank() }
+
+        val normalized = words.joinToString(" ") { word ->
+            word.replaceFirstChar { it.uppercase() }
+        }
+
+        return when {
+            normalized.isBlank() -> "Paciente MediCitas"
+            else -> normalized
+        }
     }
 }

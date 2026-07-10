@@ -182,7 +182,7 @@ fun DoctorHomeScreen(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                contentPadding = PaddingValues(bottom = 130.dp)
             ) {
                 items(uiState.visibleAppointments) { appointment ->
                     DoctorAppointmentCard(

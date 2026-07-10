@@ -99,6 +99,11 @@ fun DoctorProfileScreen(
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var darkMode by remember { mutableStateOf(false) }
+    var isEditingProfessionalInfo by remember { mutableStateOf(false) }
+    var specialtyInput by remember { mutableStateOf("") }
+    var licenseInput by remember { mutableStateOf("") }
+    var experienceInput by remember { mutableStateOf("") }
+    var priceInput by remember { mutableStateOf("") }
     var isEditingLocation by remember { mutableStateOf(false) }
     var clinicNameInput by remember { mutableStateOf("") }
     var clinicAddressInput by remember { mutableStateOf("") }
@@ -214,6 +219,48 @@ fun DoctorProfileScreen(
                     title = "Tarifa",
                     value = "$${uiState.consultationPrice.toInt()} MXN"
                 )
+
+                TextButton(
+                    onClick = {
+                        specialtyInput = uiState.specialty
+                        licenseInput = uiState.professionalLicense
+                        experienceInput = uiState.experienceYears.toString()
+                        priceInput = uiState.consultationPrice.toInt().toString()
+                        isEditingProfessionalInfo = true
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Editar información", color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            if (isEditingProfessionalInfo) {
+                EditProfessionalInfoCard(
+                    specialty = specialtyInput,
+                    onSpecialtyChange = { specialtyInput = it },
+                    license = licenseInput,
+                    onLicenseChange = { licenseInput = it },
+                    experienceYears = experienceInput,
+                    onExperienceYearsChange = { experienceInput = it.filter { char -> char.isDigit() } },
+                    price = priceInput,
+                    onPriceChange = { priceInput = it.filter { char -> char.isDigit() } },
+                    isLoading = uiState.isLoading,
+                    onCancel = { isEditingProfessionalInfo = false },
+                    onSave = {
+                        scope.launch {
+                            val saved = viewModel.updateProfessionalInfo(
+                                specialty = specialtyInput,
+                                professionalLicense = licenseInput,
+                                experienceYearsText = experienceInput,
+                                consultationPriceText = priceInput
+                            )
+
+                            if (saved) {
+                                isEditingProfessionalInfo = false
+                            }
+                        }
+                    }
+                )
             }
 
             DoctorProfileSection("CONSULTORIO") {
@@ -224,6 +271,19 @@ fun DoctorProfileScreen(
                     title = "Coordenadas",
                     value = uiState.coordinatesText()
                 )
+
+                TextButton(
+                    onClick = {
+                        clinicNameInput = uiState.clinicName
+                        clinicAddressInput = uiState.clinicAddress
+                        latitudeInput = uiState.clinicLatitude?.toString().orEmpty()
+                        longitudeInput = uiState.clinicLongitude?.toString().orEmpty()
+                        isEditingLocation = true
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Editar ubicación", color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                }
 
                 DoctorClinicMapPreview(
                     clinicName = uiState.clinicName,
@@ -430,6 +490,73 @@ private fun DoctorMapPlaceholder(
             color = TextSecondary,
             style = MaterialTheme.typography.bodySmall
         )
+    }
+}
+
+@Composable
+private fun EditProfessionalInfoCard(
+    specialty: String,
+    onSpecialtyChange: (String) -> Unit,
+    license: String,
+    onLicenseChange: (String) -> Unit,
+    experienceYears: String,
+    onExperienceYearsChange: (String) -> Unit,
+    price: String,
+    onPriceChange: (String) -> Unit,
+    isLoading: Boolean,
+    onCancel: () -> Unit,
+    onSave: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = AppWhite),
+        border = BorderStroke(1.dp, PrimaryBlue),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Editar información profesional",
+                color = TextPrimary,
+                fontWeight = FontWeight.Bold
+            )
+
+            ProfileTextField(specialty, onSpecialtyChange, "Especialidad")
+            ProfileTextField(license, onLicenseChange, "Cédula profesional")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProfileTextField(experienceYears, onExperienceYearsChange, "Años exp.", Modifier.weight(1f))
+                ProfileTextField(price, onPriceChange, "Tarifa MXN", Modifier.weight(1f))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SecondaryBlue,
+                        contentColor = PrimaryBlue
+                    ),
+                    enabled = !isLoading
+                ) {
+                    Text("Cancelar")
+                }
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    enabled = !isLoading
+                ) {
+                    Text(if (isLoading) "Guardando..." else "Guardar")
+                }
+            }
+        }
     }
 }
 

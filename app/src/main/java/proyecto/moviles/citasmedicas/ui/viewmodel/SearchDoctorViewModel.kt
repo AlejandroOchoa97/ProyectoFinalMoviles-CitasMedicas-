@@ -75,12 +75,20 @@ class SearchDoctorViewModel(
     private fun DoctorEntity.toDoctor(): Doctor {
         return Doctor(
             id = id,
-            name = name,
+            name = name.toDisplayName(),
             specialty = specialty,
             rating = 4.8,
             reviews = 120,
             experienceYears = experienceYears,
             price = "$${consultationPrice.toInt()} MXN"
         )
+    }
+
+    private fun String.toDisplayName(): String {
+        return trim()
+            .lowercase()
+            .split(" ")
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
     }
 }

@@ -14,9 +14,12 @@ import proyecto.moviles.citasmedicas.model.DoctorAppointment
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.Period
+import java.time.format.DateTimeFormatter
 
 data class DoctorAppointmentDetailUiState(
     val appointment: DoctorAppointment = SampleData.sampleDoctorAppointments.last(),
+    val prescriptionText: String = "",
+    val successMessage: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -33,6 +36,8 @@ class DoctorAppointmentDetailViewModel(
 
     var uiState by mutableStateOf(DoctorAppointmentDetailUiState())
         private set
+
+    private var currentAppointmentEntity: AppointmentEntity? = null
 
     /**
      * Carga la cita seleccionada. Si no hay repositorios, conserva datos demo para Preview.
@@ -60,9 +65,11 @@ class DoctorAppointmentDetailViewModel(
             }
 
             val patient = patientRepository.getPatientById(appointment.patientId)
+            currentAppointmentEntity = appointment
 
             uiState = uiState.copy(
                 appointment = appointment.toDoctorAppointment(patient),
+                prescriptionText = appointment.prescription,
                 isLoading = false,
                 errorMessage = null
             )
@@ -74,6 +81,32 @@ class DoctorAppointmentDetailViewModel(
         }
     }
 
+    fun updatePrescriptionText(text: String) {
+        uiState = uiState.copy(prescriptionText = text)
+    }
+
+    suspend fun savePrescription() {
+        val current = currentAppointmentEntity ?: return
+        val updated = current.copy(prescription = uiState.prescriptionText.trim())
+        appointmentRepository?.updateAppointment(updated)
+        currentAppointmentEntity = updated
+        uiState = uiState.copy(
+            appointment = updated.toDoctorAppointment(patientRepository?.getPatientById(updated.patientId)),
+            successMessage = "Receta guardada"
+        )
+    }
+
+    suspend fun updateStatus(status: String, message: String) {
+        val current = currentAppointmentEntity ?: return
+        val updated = current.copy(status = status)
+        appointmentRepository?.updateAppointment(updated)
+        currentAppointmentEntity = updated
+        uiState = uiState.copy(
+            appointment = updated.toDoctorAppointment(patientRepository?.getPatientById(updated.patientId)),
+            successMessage = message
+        )
+    }
+
     private fun AppointmentEntity.toDoctorAppointment(patient: PatientEntity?): DoctorAppointment {
         val appointmentDate = runCatching { LocalDate.parse(date) }.getOrDefault(LocalDate.now())
         val appointmentTime = runCatching { LocalTime.parse(time) }.getOrDefault(LocalTime.of(9, 0))
@@ -81,7 +114,7 @@ class DoctorAppointmentDetailViewModel(
 
         return DoctorAppointment(
             id = id,
-            patientName = patient?.name ?: "Paciente",
+            patientName = patient?.name?.toDisplayNameWithFallback() ?: "Paciente MediCitas",
             patientAge = patient?.birthDate?.toAge() ?: 0,
             patientGender = "Masculino",
             patientPhone = patient?.phone ?: "+52 55 0000 0000",
@@ -91,15 +124,32 @@ class DoctorAppointmentDetailViewModel(
             detailedReason = reason,
             specialty = "Consulta médica",
             status = AppointmentStatus.toDisplayName(status),
+            prescription = prescription,
             isUrgent = isUrgentAppointment,
             hasNotification = isUrgentAppointment
         )
     }
 
     private fun String.toAge(): Int {
-        return runCatching {
-            Period.between(LocalDate.parse(this), LocalDate.now()).years
-        }.getOrDefault(0)
+        val birthDate = runCatching { LocalDate.parse(this) }.getOrNull()
+            ?: runCatching { LocalDate.parse(this, DateTimeFormatter.ofPattern("dd/MM/yyyy")) }.getOrNull()
+
+        return birthDate?.let { Period.between(it, LocalDate.now()).years } ?: 0
     }
 
+    private fun String.toDisplayNameWithFallback(): String {
+        val words = trim()
+            .lowercase()
+            .split(" ")
+            .filter { it.isNotBlank() }
+
+        val normalized = words.joinToString(" ") { word ->
+            word.replaceFirstChar { it.uppercase() }
+        }
+
+        return when {
+            normalized.isBlank() -> "Paciente MediCitas"
+            else -> normalized
+        }
+    }
 }

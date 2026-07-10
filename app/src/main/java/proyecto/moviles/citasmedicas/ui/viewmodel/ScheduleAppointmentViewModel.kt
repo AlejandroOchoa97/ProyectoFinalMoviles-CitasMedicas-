@@ -15,8 +15,8 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 data class ScheduleAppointmentUiState(
-    val selectedDate: LocalDate = LocalDate.of(2024, 10, 4),
-    val visibleMonth: YearMonth = YearMonth.of(2024, 10),
+    val selectedDate: LocalDate = LocalDate.now(),
+    val visibleMonth: YearMonth = YearMonth.now(),
     val selectedTime: LocalTime? = null,
     val reason: String = "",
     val isSaving: Boolean = false,

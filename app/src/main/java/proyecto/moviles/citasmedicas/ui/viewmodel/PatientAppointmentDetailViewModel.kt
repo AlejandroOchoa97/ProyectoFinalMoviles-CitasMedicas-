@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import proyecto.moviles.citasmedicas.data.SampleData
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
+import proyecto.moviles.citasmedicas.model.AppointmentStatus
 import proyecto.moviles.citasmedicas.model.Appointment
 
 data class PatientAppointmentDetailUiState(
@@ -28,6 +29,8 @@ class PatientAppointmentDetailViewModel(
 
     var uiState by mutableStateOf(PatientAppointmentDetailUiState())
         private set
+
+    private var currentAppointmentEntity: proyecto.moviles.citasmedicas.data.local.entity.AppointmentEntity? = null
 
     suspend fun loadAppointment(appointmentId: Int) {
         if (appointmentRepository == null || doctorRepository == null) {
@@ -51,6 +54,7 @@ class PatientAppointmentDetailViewModel(
             }
 
             val doctor = doctorRepository.getDoctorById(appointmentEntity.doctorId)
+            currentAppointmentEntity = appointmentEntity
 
             uiState = uiState.copy(
                 appointment = appointmentEntity.toAppointment(doctor),
@@ -62,6 +66,27 @@ class PatientAppointmentDetailViewModel(
                 isLoading = false,
                 errorMessage = "No se pudo cargar el detalle de la cita."
             )
+        }
+    }
+
+    suspend fun cancelAppointment(): Boolean {
+        val appointment = currentAppointmentEntity ?: return false
+        val repository = appointmentRepository ?: return false
+
+        return try {
+            val updated = appointment.copy(status = AppointmentStatus.CANCELLED)
+            repository.updateAppointment(updated)
+            currentAppointmentEntity = updated
+            val doctor = doctorRepository?.getDoctorById(updated.doctorId)
+            uiState = uiState.copy(
+                appointment = updated.toAppointment(doctor),
+                reason = updated.reason,
+                errorMessage = null
+            )
+            true
+        } catch (exception: Exception) {
+            uiState = uiState.copy(errorMessage = "No se pudo cancelar la cita.")
+            false
         }
     }
 }

@@ -70,6 +70,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
@@ -318,7 +319,7 @@ private fun MonthHeader() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Octubre 2023",
+            text = YearMonth.now().toSpanishTitle(),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
@@ -329,6 +330,14 @@ private fun MonthHeader() {
             Icon(Icons.Default.KeyboardArrowRight, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
         }
     }
+}
+
+private fun YearMonth.toSpanishTitle(): String {
+    val months = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    )
+    return "${months[monthValue - 1]} $year"
 }
 
 @Composable

@@ -94,6 +94,7 @@ internal fun AppointmentEntity.toAppointment(doctor: DoctorEntity?): Appointment
         time = runCatching { LocalTime.parse(time) }.getOrDefault(LocalTime.of(9, 0)),
         price = "$${doctor?.consultationPrice?.toInt() ?: 0} MXN",
         status = status.toPatientStatus(),
+        prescription = prescription,
         clinicName = doctor?.clinicName.orEmpty(),
         clinicAddress = doctor?.clinicAddress.orEmpty(),
         latitude = doctor?.clinicLatitude,

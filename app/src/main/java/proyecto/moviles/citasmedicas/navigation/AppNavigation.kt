@@ -52,18 +52,18 @@ fun AppNavigation(
         scope.launch {
             val cleanEmail = email.trim()
 
+            val doctor = doctorRepository?.getDoctorByEmail(cleanEmail)
+            if (doctor != null) {
+                selectedDoctorId = doctor.id
+                currentRoute = Routes.DOCTOR_HOME
+                return@launch
+            }
+
             // Firebase valida la cuenta. Room decide si ese correo pertenece a paciente o médico.
             val patient = patientRepository?.getPatientByEmail(cleanEmail)
             if (patient != null) {
                 selectedPatientId = patient.id
                 currentRoute = Routes.PATIENT_HOME
-                return@launch
-            }
-
-            val doctor = doctorRepository?.getDoctorByEmail(cleanEmail)
-            if (doctor != null) {
-                selectedDoctorId = doctor.id
-                currentRoute = Routes.DOCTOR_HOME
                 return@launch
             }
 
@@ -77,25 +77,9 @@ fun AppNavigation(
     when (currentRoute) {
     Routes.SPLASH -> SplashScreen(
         onFinished = {
-            scope.launch {
-                val user = authRepository?.currentUser
-                if (user != null && user.email != null) {
-                    val patient = patientRepository?.getPatientByEmail(user.email!!)
-                    if (patient != null) {
-                        authRepository.activePatient = patient
-                        currentRoute = Routes.PATIENT_HOME
-                        return@launch
-                    }
-
-                    val doctor = doctorRepository?.getDoctorByEmail(user.email!!)
-                    if (doctor != null) {
-                        authRepository.activeDoctor = doctor
-                        currentRoute = Routes.DOCTOR_HOME
-                        return@launch
-                    }
-                }
-                currentRoute = Routes.ONBOARDING_1
-            }
+            // Para la presentación siempre mostramos el flujo inicial completo.
+            // El usuario puede omitir onboarding o avanzar hasta iniciar sesión.
+            currentRoute = Routes.ONBOARDING_1
         }
     )
         Routes.ONBOARDING_1 -> OnboardingScreen(
@@ -115,7 +99,7 @@ fun AppNavigation(
         )
         Routes.LOGIN -> LoginScreen(
             onLoginSuccess = { role ->
-                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
+                currentRoute = if (role == "DOCTOR") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
             },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },
@@ -128,9 +112,7 @@ fun AppNavigation(
         )
         Routes.REGISTER -> RegisterScreen(
             onBack = { currentRoute = Routes.LOGIN },
-            onRegistrationComplete = { role ->
-                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
-            },
+            onRegistrationComplete = { currentRoute = Routes.LOGIN },
             authRepository = authRepository,
             patientRepository = patientRepository,
             doctorRepository = doctorRepository
@@ -242,7 +224,7 @@ fun AppNavigation(
         )
         else -> LoginScreen(
             onLoginSuccess = { role ->
-                currentRoute = if (role == "Médico") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
+                currentRoute = if (role == "DOCTOR") Routes.DOCTOR_HOME else Routes.PATIENT_HOME
             },
             onRegisterClick = { currentRoute = Routes.REGISTER },
             onForgotPasswordClick = { currentRoute = Routes.RECOVER_PASSWORD },

@@ -15,6 +15,7 @@ import proyecto.moviles.citasmedicas.model.DoctorAppointment
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.Period
+import java.time.format.DateTimeFormatter
 
 enum class DoctorAppointmentFilter {
     ALL,
@@ -108,7 +109,7 @@ class DoctorHomeViewModel(
 
         return DoctorAppointment(
             id = id,
-            patientName = patient?.name ?: "Paciente",
+            patientName = patient?.name?.toDisplayNameWithFallback() ?: "Paciente MediCitas",
             patientAge = patient?.birthDate?.toAge() ?: 0,
             patientPhone = patient?.phone ?: "+52 55 0000 0000",
             date = appointmentDate,
@@ -122,12 +123,29 @@ class DoctorHomeViewModel(
     }
 
     private fun String.toAge(): Int {
-        return runCatching {
-            Period.between(LocalDate.parse(this), LocalDate.now()).years
-        }.getOrDefault(0)
+        val birthDate = runCatching { LocalDate.parse(this) }.getOrNull()
+            ?: runCatching { LocalDate.parse(this, DateTimeFormatter.ofPattern("dd/MM/yyyy")) }.getOrNull()
+
+        return birthDate?.let { Period.between(it, LocalDate.now()).years } ?: 0
     }
 
     private fun String.toDoctorHeaderName(): String {
         return uppercase()
+    }
+
+    private fun String.toDisplayNameWithFallback(): String {
+        val words = trim()
+            .lowercase()
+            .split(" ")
+            .filter { it.isNotBlank() }
+
+        val normalized = words.joinToString(" ") { word ->
+            word.replaceFirstChar { it.uppercase() }
+        }
+
+        return when {
+            normalized.isBlank() -> "Paciente MediCitas"
+            else -> normalized
+        }
     }
 }

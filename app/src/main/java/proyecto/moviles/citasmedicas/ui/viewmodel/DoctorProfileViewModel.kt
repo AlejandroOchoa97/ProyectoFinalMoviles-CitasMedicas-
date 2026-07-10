@@ -133,6 +133,65 @@ class DoctorProfileViewModel(
         }
     }
 
+    suspend fun updateProfessionalInfo(
+        specialty: String,
+        professionalLicense: String,
+        experienceYearsText: String,
+        consultationPriceText: String
+    ): Boolean {
+        val doctor = currentDoctor
+
+        if (doctorRepository == null || doctor == null) {
+            uiState = uiState.copy(errorMessage = "No se pudo editar la información profesional.")
+            return false
+        }
+
+        val cleanSpecialty = specialty.trim()
+        val cleanLicense = professionalLicense.trim()
+        val years = experienceYearsText.trim().toIntOrNull()
+        val price = consultationPriceText.trim().replace(",", ".").toDoubleOrNull()
+
+        if (cleanSpecialty.isBlank()) {
+            uiState = uiState.copy(errorMessage = "Ingresa la especialidad.")
+            return false
+        }
+
+        if (years == null || years < 0) {
+            uiState = uiState.copy(errorMessage = "Ingresa años de experiencia válidos.")
+            return false
+        }
+
+        if (price == null || price <= 0.0) {
+            uiState = uiState.copy(errorMessage = "Ingresa una tarifa válida.")
+            return false
+        }
+
+        uiState = uiState.copy(isLoading = true, errorMessage = null, successMessage = null)
+
+        return try {
+            val updatedDoctor = doctor.copy(
+                specialty = cleanSpecialty,
+                professionalLicense = cleanLicense.ifBlank { "Pendiente" },
+                experienceYears = years,
+                consultationPrice = price
+            )
+
+            doctorRepository.updateDoctor(updatedDoctor)
+            currentDoctor = updatedDoctor
+            uiState = updatedDoctor.toUiState().copy(
+                isLoading = false,
+                successMessage = "Información profesional guardada."
+            )
+            true
+        } catch (exception: Exception) {
+            uiState = uiState.copy(
+                isLoading = false,
+                errorMessage = "No se pudo guardar la información profesional."
+            )
+            false
+        }
+    }
+
     private fun DoctorEntity.toUiState(): DoctorProfileUiState {
         return DoctorProfileUiState(
             name = name,
