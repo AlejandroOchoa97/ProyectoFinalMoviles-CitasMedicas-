@@ -53,6 +53,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.BuildConfig
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
 import proyecto.moviles.citasmedicas.model.Appointment
@@ -244,6 +245,7 @@ private fun LocationSection(appointment: Appointment, showInteractiveMap: Boolea
     val latitude = appointment.latitude
     val longitude = appointment.longitude
     val hasCoordinates = latitude != null && longitude != null
+    val canShowMap = hasCoordinates && showInteractiveMap && BuildConfig.MAPS_API_KEY_AVAILABLE
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -270,32 +272,48 @@ private fun LocationSection(appointment: Appointment, showInteractiveMap: Boolea
                 }
             }
 
-            if (hasCoordinates && showInteractiveMap) {
+            if (canShowMap) {
                 AppointmentMap(
                     latitude = latitude,
                     longitude = longitude,
                     title = appointment.clinicName.ifBlank { "Consultorio" }
                 )
             } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .background(SecondaryBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Filled.LocationOn, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(38.dp))
-                        Text(
-                            "Mapa pendiente: faltan coordenadas reales del consultorio",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        )
-                    }
-                }
+                MapPlaceholder(hasCoordinates = hasCoordinates)
             }
+        }
+    }
+}
+
+@Composable
+private fun MapPlaceholder(hasCoordinates: Boolean) {
+    val message = when {
+        !hasCoordinates -> "Mapa pendiente: faltan coordenadas reales del consultorio"
+        !BuildConfig.MAPS_API_KEY_AVAILABLE -> "Mapa no configurado: agrega MAPS_API_KEY en local.properties"
+        else -> "Mapa no disponible por el momento"
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .background(SecondaryBlue),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Filled.LocationOn,
+                contentDescription = null,
+                tint = PrimaryBlue,
+                modifier = Modifier.size(38.dp)
+            )
+            Text(
+                message,
+                color = PrimaryBlue,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
         }
     }
 }

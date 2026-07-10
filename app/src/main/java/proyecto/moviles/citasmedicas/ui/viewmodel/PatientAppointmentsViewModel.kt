@@ -95,7 +95,9 @@ internal fun AppointmentEntity.toAppointment(doctor: DoctorEntity?): Appointment
         price = "$${doctor?.consultationPrice?.toInt() ?: 0} MXN",
         status = status.toPatientStatus(),
         clinicName = doctor?.clinicName.orEmpty(),
-        clinicAddress = doctor?.clinicAddress.orEmpty()
+        clinicAddress = doctor?.clinicAddress.orEmpty(),
+        latitude = doctor?.clinicLatitude,
+        longitude = doctor?.clinicLongitude
     )
 }
 

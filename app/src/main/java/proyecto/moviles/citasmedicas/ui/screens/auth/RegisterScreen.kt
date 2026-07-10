@@ -50,8 +50,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import kotlinx.coroutines.launch
+import proyecto.moviles.citasmedicas.data.local.entity.DoctorEntity
+import proyecto.moviles.citasmedicas.data.local.entity.PatientEntity
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
+import proyecto.moviles.citasmedicas.data.repository.DoctorRepository
+import proyecto.moviles.citasmedicas.data.repository.PatientRepository
 import proyecto.moviles.citasmedicas.ui.components.AppButton
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
@@ -68,7 +74,9 @@ fun RegisterScreen(
     onBack: () -> Unit,
     onRegistrationComplete: (String) -> Unit,
     modifier: Modifier = Modifier,
-    authRepository: AuthRepository? = null
+    authRepository: AuthRepository? = null,
+    patientRepository: PatientRepository? = null,
+    doctorRepository: DoctorRepository? = null
 ) {
     var role by remember { mutableStateOf("Paciente") }
     var fullName by remember { mutableStateOf("") }
@@ -124,8 +132,36 @@ fun RegisterScreen(
 
                 result.onSuccess {
                     snackbarHostState.showSnackbar("Registro exitoso")
-                    // Opcional: Podrías buscar el objeto recién creado en la DB local y asignarlo a authRepository.activePatient/Doctor
-                    onRegistrationComplete(role)
+                    // Firebase Auth solo guarda el acceso. Room guarda el perfil de MediCitas.
+                    if (role == "Paciente") {
+                        patientRepository?.insertPatient(
+                            PatientEntity(
+                                name = fullName.trim(),
+                                email = cleanEmail,
+                                password = cleanPassword,
+                                phone = phone.trim(),
+                                birthDate = birthDate.trim()
+                            )
+                        )
+                    } else {
+                        doctorRepository?.insertDoctor(
+                            DoctorEntity(
+                                name = fullName.trim(),
+                                email = cleanEmail,
+                                password = cleanPassword,
+                                specialty = "Medicina General",
+                                professionalLicense = "Pendiente",
+                                experienceYears = 0,
+                                clinicName = "Clínica pendiente",
+                                clinicAddress = "Dirección pendiente",
+                                consultationPrice = 800.0
+                            )
+                        )
+                    }
+
+                    // Al registrarse correctamente regresa de inmediato al Login.
+                    // Si esperamos al Snackbar, la navegación tarda hasta que el mensaje desaparece.
+                    onRegistrationComplete()
                 }.onFailure { exception ->
                     snackbarHostState.showSnackbar(
                         "Error: ${exception.localizedMessage ?: "No se pudo registrar el usuario"}"
@@ -215,7 +251,11 @@ fun RegisterScreen(
             RegisterField(email, { email = it }, "Correo electrónico")
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                RegisterField(birthDate, { birthDate = it }, "Fecha nac.", Modifier.weight(1f))
+                BirthDateField(
+                    value = birthDate,
+                    onValueChange = { birthDate = formatBirthDateInput(it) },
+                    modifier = Modifier.weight(1f)
+                )
 
                 GenderDropdownField(
                     value = gender,
@@ -355,6 +395,44 @@ private fun RegisterField(
             unfocusedBorderColor = BorderSoft
         )
     )
+}
+
+@Composable
+private fun BirthDateField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Fecha de nacimiento") },
+        placeholder = { Text("DD/MM/AAAA") },
+        supportingText = { Text("Ejemplo: 30/08/1997") },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+        singleLine = true,
+        shape = RoundedCornerShape(8.dp),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = AppWhite,
+            unfocusedContainerColor = AppWhite,
+            focusedBorderColor = PrimaryBlue,
+            unfocusedBorderColor = BorderSoft
+        )
+    )
+}
+
+private fun formatBirthDateInput(input: String): String {
+    val digits = input.filter { it.isDigit() }.take(8)
+
+    return buildString {
+        digits.forEachIndexed { index, char ->
+            if (index == 2 || index == 4) append("/")
+            append(char)
+        }
+    }
 }
 
 @Preview(

@@ -15,16 +15,19 @@ data class DoctorProfileUiState(
     val experienceYears: Int = 10,
     val clinicName: String = "Torre Médica Metropolitan",
     val clinicAddress: String = "Av. Insurgentes Sur 1582, CDMX",
+    val clinicLatitude: Double? = 19.3763,
+    val clinicLongitude: Double? = -99.1770,
     val consultationPrice: Double = 800.0,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val successMessage: String? = null
 )
 
 /**
  * ViewModel del perfil médico.
  *
- * Carga desde Room los datos del médico activo para evitar reutilizar
- * el perfil del paciente.
+ * Carga desde Room los datos del médico activo y permite actualizar
+ * la ubicación exacta del consultorio.
  */
 class DoctorProfileViewModel(
     private val doctorRepository: DoctorRepository? = null
@@ -32,6 +35,8 @@ class DoctorProfileViewModel(
 
     var uiState by mutableStateOf(DoctorProfileUiState())
         private set
+
+    private var currentDoctor: DoctorEntity? = null
 
     /**
      * Carga el médico por ID.
@@ -41,12 +46,13 @@ class DoctorProfileViewModel(
     suspend fun loadDoctor(doctorId: Int) {
         if (doctorRepository == null) return
 
-        uiState = uiState.copy(isLoading = true, errorMessage = null)
+        uiState = uiState.copy(isLoading = true, errorMessage = null, successMessage = null)
 
         try {
             val doctor = doctorRepository.getDoctorById(doctorId)
 
             uiState = if (doctor != null) {
+                currentDoctor = doctor
                 doctor.toUiState().copy(isLoading = false)
             } else {
                 uiState.copy(
@@ -62,6 +68,71 @@ class DoctorProfileViewModel(
         }
     }
 
+    /**
+     * Actualiza los datos de consultorio.
+     *
+     * Las coordenadas se copian manualmente desde Google Maps para mantener
+     * esta entrega simple y estable.
+     */
+    suspend fun updateClinicLocation(
+        clinicName: String,
+        clinicAddress: String,
+        latitudeText: String,
+        longitudeText: String
+    ): Boolean {
+        val doctor = currentDoctor
+
+        if (doctorRepository == null || doctor == null) {
+            uiState = uiState.copy(errorMessage = "No se pudo editar el consultorio.")
+            return false
+        }
+
+        val cleanClinicName = clinicName.trim()
+        val cleanClinicAddress = clinicAddress.trim()
+        val latitude = latitudeText.trim().replace(",", ".").toDoubleOrNull()
+        val longitude = longitudeText.trim().replace(",", ".").toDoubleOrNull()
+
+        if (cleanClinicName.isBlank() || cleanClinicAddress.isBlank()) {
+            uiState = uiState.copy(errorMessage = "Completa el nombre y dirección del consultorio.")
+            return false
+        }
+
+        if (latitude == null || latitude !in -90.0..90.0) {
+            uiState = uiState.copy(errorMessage = "La latitud debe estar entre -90 y 90.")
+            return false
+        }
+
+        if (longitude == null || longitude !in -180.0..180.0) {
+            uiState = uiState.copy(errorMessage = "La longitud debe estar entre -180 y 180.")
+            return false
+        }
+
+        uiState = uiState.copy(isLoading = true, errorMessage = null, successMessage = null)
+
+        return try {
+            val updatedDoctor = doctor.copy(
+                clinicName = cleanClinicName,
+                clinicAddress = cleanClinicAddress,
+                clinicLatitude = latitude,
+                clinicLongitude = longitude
+            )
+
+            doctorRepository.updateDoctor(updatedDoctor)
+            currentDoctor = updatedDoctor
+            uiState = updatedDoctor.toUiState().copy(
+                isLoading = false,
+                successMessage = "Ubicación del consultorio guardada."
+            )
+            true
+        } catch (exception: Exception) {
+            uiState = uiState.copy(
+                isLoading = false,
+                errorMessage = "No se pudo guardar la ubicación."
+            )
+            false
+        }
+    }
+
     private fun DoctorEntity.toUiState(): DoctorProfileUiState {
         return DoctorProfileUiState(
             name = name,
@@ -71,6 +142,8 @@ class DoctorProfileViewModel(
             experienceYears = experienceYears,
             clinicName = clinicName,
             clinicAddress = clinicAddress,
+            clinicLatitude = clinicLatitude,
+            clinicLongitude = clinicLongitude,
             consultationPrice = consultationPrice
         )
     }

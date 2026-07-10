@@ -3,9 +3,11 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.repository.AppointmentRepository
 import proyecto.moviles.citasmedicas.data.repository.AuthRepository
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
@@ -42,7 +44,35 @@ fun AppNavigation(
 ) {
     var currentRoute by rememberSaveable { mutableStateOf(startDestination) }
     var selectedAppointmentId by rememberSaveable { mutableStateOf(-1) }
+    var selectedPatientId by rememberSaveable { mutableStateOf(1) }
     var selectedDoctorId by rememberSaveable { mutableStateOf(1) }
+    val scope = rememberCoroutineScope()
+
+    fun navigateAfterFirebaseLogin(email: String) {
+        scope.launch {
+            val cleanEmail = email.trim()
+
+            // Firebase valida la cuenta. Room decide si ese correo pertenece a paciente o médico.
+            val patient = patientRepository?.getPatientByEmail(cleanEmail)
+            if (patient != null) {
+                selectedPatientId = patient.id
+                currentRoute = Routes.PATIENT_HOME
+                return@launch
+            }
+
+            val doctor = doctorRepository?.getDoctorByEmail(cleanEmail)
+            if (doctor != null) {
+                selectedDoctorId = doctor.id
+                currentRoute = Routes.DOCTOR_HOME
+                return@launch
+            }
+
+            // Si el usuario existe en Firebase pero aún no tiene perfil local,
+            // lo mandamos al flujo paciente para evitar cargar el médico demo por error.
+            selectedPatientId = 1
+            currentRoute = Routes.PATIENT_HOME
+        }
+    }
 
     when (currentRoute) {
         Routes.SPLASH -> SplashScreen(
