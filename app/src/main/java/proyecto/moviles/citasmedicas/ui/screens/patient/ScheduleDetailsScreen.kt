@@ -145,7 +145,7 @@ fun ScheduleDetailsScreen(
             )
 
             Text(
-                text = "Confirma tu prÃ³xima consulta mÃ©dica",
+                text = "Confirma tu proxima consulta medica",
                 style = MaterialTheme.typography.bodyLarge,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 2.dp)

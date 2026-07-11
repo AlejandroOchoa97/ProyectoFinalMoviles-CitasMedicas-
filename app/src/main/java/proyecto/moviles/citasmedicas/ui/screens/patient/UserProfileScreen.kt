@@ -149,10 +149,10 @@ fun UserProfileScreen(
 
             ProfileSection("CUENTA") {
                 ProfileOption(Icons.Filled.Person, "Nombre", uiState.name)
-                ProfileOption(Icons.Filled.Email, "Correo electrÃ³nico", uiState.email)
-                ProfileOption(Icons.Filled.Phone, "TelÃ©fono", uiState.phone)
+                ProfileOption(Icons.Filled.Email, "Correo electronico", uiState.email)
+                ProfileOption(Icons.Filled.Phone, "Telefono", uiState.phone)
                 ProfileOption(Icons.Filled.Cake, "Fecha de nacimiento", uiState.birthDate)
-                ProfileOption(Icons.Filled.Lock, "Cambiar contraseÃ±a", "Pendiente")
+                ProfileOption(Icons.Filled.Lock, "Cambiar contraseña", "Pendiente")
             }
 
             OutlinedButton(
@@ -184,9 +184,9 @@ fun UserProfileScreen(
                 })
             }
 
-            ProfileSection("INFORMACIÃ“N") {
+            ProfileSection("INFORMACION") {
                 ProfileOption(Icons.Filled.Info, "Acerca de", "MediCitas")
-                ProfileOption(Icons.Filled.PrivacyTip, "PolÃ­tica de privacidad", "Ver documento")
+                ProfileOption(Icons.Filled.PrivacyTip, "Politica de privacidad", "Ver documento")
             }
 
             Card(
@@ -203,7 +203,7 @@ fun UserProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.AutoMirrored.Outlined.ExitToApp, null, tint = ErrorRed)
-                    Text("  Cerrar sesiÃ³n", color = ErrorRed, fontWeight = FontWeight.SemiBold)
+                    Text("  Cerrar sesión", color = ErrorRed, fontWeight = FontWeight.SemiBold)
                 }
             }
 

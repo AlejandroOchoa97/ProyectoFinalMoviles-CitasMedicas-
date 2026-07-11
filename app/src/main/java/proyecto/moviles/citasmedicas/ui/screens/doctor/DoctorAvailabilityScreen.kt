@@ -69,12 +69,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import proyecto.moviles.citasmedicas.data.repository.DoctorAvailabilityRepository
 import proyecto.moviles.citasmedicas.ui.components.BottomNavigationBar
+import proyecto.moviles.citasmedicas.ui.components.ScheduleCalendarCard
 import proyecto.moviles.citasmedicas.ui.theme.AppBackground
 import proyecto.moviles.citasmedicas.ui.theme.AppBackgroundPreview
 import proyecto.moviles.citasmedicas.ui.theme.AppWhite
@@ -112,6 +114,8 @@ fun DoctorAvailabilityScreen(
     // Aqui guardo temporalmente que hora estoy editando.
     // Si es null significa que el TimePicker esta cerrado.
     var timeEditTarget by remember { mutableStateOf<TimeEditTarget?>(null) }
+    var visibleMonth by remember { mutableStateOf(YearMonth.now()) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
     // ViewModel que maneja la disponibilidad del medico y la comunicacion con Room.
     val viewModel = remember(availabilityRepository) {
@@ -181,19 +185,26 @@ fun DoctorAvailabilityScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Encabezado del mes actual.
-            MonthHeader()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Tira de calendario para seleccionar el dia al que se le asignan horarios.
-            CalendarStrip(
-                selectedDay = uiState.selectedDay,
-                onDaySelected = { day ->
+            // Calendario mensual completo para seleccionar el dia que se va a configurar.
+            // Se reutiliza el mismo componente visual que usamos en el flujo del paciente.
+            ScheduleCalendarCard(
+                visibleMonth = visibleMonth,
+                selectedDate = selectedDate,
+                canNavigateToPreviousMonth = true,
+                onPreviousMonthClick = {
+                    visibleMonth = visibleMonth.minusMonths(1)
+                },
+                onNextMonthClick = {
+                    visibleMonth = visibleMonth.plusMonths(1)
+                },
+                onDateSelected = { date ->
+                    selectedDate = date
                     scope.launch {
+                        // Por ahora Room guarda la disponibilidad por numero de dia.
+                        // Por eso convertimos la fecha seleccionada a dayOfMonth.
                         viewModel.loadAvailabilityForDay(
                             doctorId = doctorId,
-                            day = day
+                            day = date.dayOfMonth.toString()
                         )
                     }
                 }
@@ -216,7 +227,7 @@ fun DoctorAvailabilityScreen(
                 TextButton(onClick = viewModel::addBlock) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("AÃ±adir bloque", fontWeight = FontWeight.SemiBold)
+                    Text("Añadir bloque", fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -225,7 +236,7 @@ fun DoctorAvailabilityScreen(
             // Si el dia no tiene horarios, se muestra un mensaje para que el medico agregue uno.
             if (uiState.blocks.isEmpty()) {
                 Text(
-                    text = "No hay bloques para este dÃ­a. Agrega uno para configurar disponibilidad.",
+                    text = "No hay bloques para este dia. Agrega uno para configurar disponibilidad.",
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 12.dp)
@@ -279,7 +290,7 @@ fun DoctorAvailabilityScreen(
             )
 
             Text(
-                text = "Este precio se mostrarÃ¡ a los pacientes al reservar.",
+                text = "Este precio se mostrara a los pacientes al reservar.",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 8.dp, start = 4.dp)
